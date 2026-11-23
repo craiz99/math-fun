@@ -38,6 +38,7 @@ export function App() {
       {game.screen === 'play' && game.currentProblem && (
         <div className="game-layer">
           <TopBar
+            squadOrder={game.squadOrder}
             questionIndex={game.questionIndex}
             level={game.level}
             musicOn={game.musicOn}
@@ -57,15 +58,18 @@ export function App() {
                 typedValue={game.typedValue}
                 answerState={game.answerState}
                 hintLevel={game.hintLevel}
+                walkthroughTrigger={game.walkthroughTrigger}
                 onRequestHint={game.handleRequestHint}
+                onNewProblem={game.handleNewProblem}
+                onReadEquation={game.handleReadEquation}
               />
 
               <SquadStage
                 squadId={game.activeSquadId}
                 reaction={game.reaction}
                 speechText={game.speechText}
-                raccoonPhase={game.raccoonPhase}
-                onTriggerRaccoonChase={game.triggerRaccoonChase}
+                gagState={game.gagState}
+                onTriggerGag={game.triggerStageGag}
               />
             </div>
 

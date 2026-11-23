@@ -1,7 +1,8 @@
-import type { DifficultyLevel } from '../../game/types';
-import { QUESTIONS_PER_SQUAD, SQUADS, SQUAD_ORDER } from '../../game/squads';
+import type { DifficultyLevel, SquadId } from '../../game/types';
+import { QUESTIONS_PER_SQUAD, SQUADS } from '../../game/squads';
 
 interface TopBarProps {
+  squadOrder: SquadId[];
   questionIndex: number;
   level: DifficultyLevel;
   musicOn: boolean;
@@ -12,12 +13,13 @@ interface TopBarProps {
 }
 
 const LEVEL_LABELS: Record<DifficultyLevel, string> = {
-  1: 'Up to 15',
-  2: 'Up to 20',
-  3: 'Up to 50',
+  1: 'Up to 10',
+  2: 'Up to 15',
+  3: 'Up to 20',
 };
 
 export function TopBar({
+  squadOrder,
   questionIndex,
   level,
   musicOn,
@@ -27,19 +29,19 @@ export function TopBar({
   onGoHome,
 }: TopBarProps) {
   const activeSquadIdx = Math.min(
-    SQUAD_ORDER.length - 1,
+    squadOrder.length - 1,
     Math.floor(questionIndex / QUESTIONS_PER_SQUAD)
   );
   const starsInSquad = questionIndex % QUESTIONS_PER_SQUAD;
 
   return (
     <header className="top-bar">
-      {/* Upper-left 4-Squad Progress Bar */}
+      {/* Upper-left 4-Squad Progress Bar matching shuffled replay order */}
       <div
         className="squad-progress-bar"
-        aria-label={`Progress: question ${questionIndex + 1} of ${SQUAD_ORDER.length * QUESTIONS_PER_SQUAD}`}
+        aria-label={`Progress: question ${questionIndex + 1} of ${squadOrder.length * QUESTIONS_PER_SQUAD}`}
       >
-        {SQUAD_ORDER.map((id, idx) => {
+        {squadOrder.map((id, idx) => {
           const squad = SQUADS[id];
           const isDone = idx < activeSquadIdx;
           const isActive = idx === activeSquadIdx;
@@ -65,7 +67,7 @@ export function TopBar({
                 <span>{isDone ? '⭐' : squad.badgeEmoji}</span>
               </div>
 
-              {idx < SQUAD_ORDER.length - 1 && (
+              {idx < squadOrder.length - 1 && (
                 <div className="squad-rail">
                   <div className="squad-rail-fill" style={{ width: `${railPct}%` }} />
                 </div>

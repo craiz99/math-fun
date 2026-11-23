@@ -10,21 +10,13 @@ export type ReactionState = 'idle' | 'happy' | 'encourage' | 'celebrate';
 
 export type MathOperator = '+' | '-';
 
-export interface NumberLineHop {
-  from: number;
-  to: number;
-  delta: number;
-}
-
-export interface HintData {
-  strategyTitle: string;
-  step1Text: string;
-  visualType: 'tenframe' | 'base10';
-  numberLine: {
-    start: number;
-    end: number;
-    hops: NumberLineHop[];
-  };
+export interface CountingHintData {
+  mode: 'count-on' | 'count-back';
+  startNumber: number;
+  stepCount: number;
+  stepValues: number[];
+  equationSpoken: string;
+  step1Spoken: string;
 }
 
 export interface MathProblem {
@@ -36,7 +28,7 @@ export interface MathProblem {
   answer: number;
   inputMode: InputMode;
   choices: number[];
-  hint: HintData;
+  hint: CountingHintData;
 }
 
 export interface SquadConfig {
@@ -50,3 +42,16 @@ export interface SquadConfig {
   encourageLines: string[];
   introLine: string;
 }
+
+export type StageGagState =
+  | { kind: 'none' }
+  | { kind: 'raccoon-sneaking' }
+  | { kind: 'raccoon-chasing' }
+  | { kind: 'raccoon-victory' }
+  | { kind: 'mikey-prank' }
+  | { kind: 'jj-corrects' }
+  | { kind: 'gwima-arrives' }
+  | { kind: 'gwima-blasted' }
+  | { kind: 'gwima-victory' }
+  | { kind: 'panda-tower' }
+  | { kind: 'panda-rain' };

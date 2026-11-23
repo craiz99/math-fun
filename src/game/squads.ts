@@ -22,9 +22,9 @@ export const SQUADS: Record<SquadId, SquadConfig> = {
       'YAY!! YOU GOT IT!!',
     ],
     encourageLines: [
-      'Ooh, super close! Check the hint!',
-      'You got this! Let’s try together!',
-      'Almost! Use the bamboo blocks!',
+      'Ooh, super close! Let’s count together!',
+      'You got this! Tap each one to count!',
+      'Almost! Listen and count with us!',
     ],
   },
   chickens: {
@@ -42,8 +42,8 @@ export const SQUADS: Record<SquadId, SquadConfig> = {
       'SUPER CHICKEN WIN!!',
     ],
     encourageLines: [
-      'Bawk! Almost! Peek at the eggs!',
-      'Nice try! Let’s count the eggs left!',
+      'Bawk! Almost! Tap the eggs to count!',
+      'Nice try! Let’s count together!',
       'You’re so close — try again!',
     ],
   },
@@ -62,9 +62,9 @@ export const SQUADS: Record<SquadId, SquadConfig> = {
       'MATH GENIUS!!',
     ],
     encourageLines: [
-      'Whoa, almost! Check out the hint!',
-      'Nice try, buddy! You can do it!',
-      'Let’s solve this adventure together!',
+      'Whoa, almost! Tap the stars to count!',
+      'Nice try, buddy! Let’s count together!',
+      'You can do it! Tap each star!',
     ],
   },
   popstars: {
@@ -82,13 +82,30 @@ export const SQUADS: Record<SquadId, SquadConfig> = {
       'POP-STAR PERFECTION!!',
     ],
     encourageLines: [
-      'Shine on! Look at the hint!',
-      'So close, superstar! Try once more!',
-      'Let’s break it down together!',
+      'Shine on! Tap each berry to count!',
+      'So close, superstar! Count with us!',
+      'You’ve got this! Tap and count!',
     ],
   },
 };
 
 export function pickRandomLine(lines: string[], seed: number): string {
   return lines[Math.abs(seed) % lines.length];
+}
+
+/** Shuffle the 4 stage squads cleanly and ensure the opener changes on replay. */
+export function shuffleSquadOrder(
+  previousFirst?: SquadId,
+  rng: () => number = Math.random
+): SquadId[] {
+  const arr: SquadId[] = [...SQUAD_ORDER];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  if (previousFirst && arr[0] === previousFirst) {
+    const swapIdx = 1 + Math.floor(rng() * (arr.length - 1));
+    [arr[0], arr[swapIdx]] = [arr[swapIdx], arr[0]];
+  }
+  return arr;
 }

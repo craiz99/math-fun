@@ -340,12 +340,18 @@ button {
   box-shadow: 0 3px 0 rgba(40, 26, 56, 0.25);
 }
 
-.hint-trigger-btn {
-  padding: 8px 20px;
+.math-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-action-btn {
+  padding: 8px 16px;
   border-radius: 999px;
-  font-size: 20px;
+  font-size: 19px;
   border-width: 3.5px;
-  box-shadow: 0 5px 0 var(--btn-shadow, #a16207);
+  box-shadow: 0 5px 0 var(--btn-shadow, #1d122b);
 }
 
 .equation-row {
@@ -359,6 +365,25 @@ button {
   line-height: 1.04;
   color: var(--ink);
   letter-spacing: 0.01em;
+}
+
+.equation-speak-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3.5px solid var(--ink);
+  background: #e0f2fe;
+  font-size: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 0 rgba(40, 26, 56, 0.22);
+  transition: transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.equation-speak-btn:active {
+  transform: scale(0.92) translateY(3px);
 }
 
 .answer-slot {
@@ -399,228 +424,159 @@ button {
   animation: gentle-wobble 0.42s ease;
 }
 
-/* Visual Hint Box */
+/* Voice-Guided Interactive Counting Hint Box */
 .hint-panel {
   width: 100%;
-  background: #fffbeb;
-  border: 3.5px solid #f59e0b;
-  border-radius: 20px;
-  padding: 9px 12px;
+  background: #fef9c3;
+  border: 4px solid #f59e0b;
+  border-radius: 24px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
   animation: pop-in 0.25s ease;
 }
 
-.hint-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: #b45309;
-  text-align: center;
-}
-
-.hint-badge {
-  background: #f59e0b;
-  color: #fff;
-  padding: 2px 11px;
-  border-radius: 999px;
-  font-size: 15px;
-  border: 2.5px solid var(--ink);
-}
-
-.tenframe-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-
-.tenframe-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 38px);
-  grid-template-rows: repeat(2, 38px);
-  gap: 3px;
-  background: #ffffff;
-  border: 3px solid var(--ink);
-  border-radius: 12px;
-  padding: 4px;
-}
-
-.tf-cell {
-  border: 2px solid #cbd5e1;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 21px;
-  position: relative;
-  background: #f8fafc;
-  transition: transform 0.12s ease;
-  padding: 0;
-}
-
-.tf-cell.tappable {
-  cursor: pointer;
-}
-
-.tf-cell.tappable:active {
-  transform: scale(1.18);
-}
-
-.tf-cell.group-a {
-  background: #dcfce7;
-  border-color: #22c55e;
-}
-
-.tf-cell.group-b {
-  background: #fef9c3;
-  border-color: #eab308;
-}
-
-.tf-cell.removed {
-  background: #f1f5f9;
-  border-style: dashed;
-  border-color: #94a3b8;
-  opacity: 0.45;
-}
-
-.tf-cell.removed::after {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  background: linear-gradient(
-    -45deg,
-    transparent 44%,
-    #ef4444 44%,
-    #ef4444 56%,
-    transparent 56%
-  );
-}
-
-.tf-cell.counted {
-  box-shadow: 0 0 0 2.5px #ec4899;
-  transform: scale(1.06);
-}
-
-.tf-num {
-  position: absolute;
-  bottom: -2px;
-  right: 1px;
-  font-size: 10px;
-  font-weight: 900;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 4px;
-  padding: 0 2px;
-  line-height: 1.1;
-}
-
-/* Base-10 Blocks for Level 3 (>20) */
-.base10-wrap {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.base10-group {
-  display: flex;
-  align-items: flex-end;
-  gap: 5px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  border: 2.5px solid var(--ink);
-  background: #ffffff;
-}
-
-.ten-rod {
-  width: 14px;
-  height: 44px;
-  border-radius: 4px;
-  border: 2px solid var(--ink);
-  background: repeating-linear-gradient(
-    to bottom,
-    #38bdf8 0px,
-    #38bdf8 3px,
-    #0284c7 3px,
-    #0284c7 4.4px
-  );
-}
-
-.ten-rod.removed {
-  opacity: 0.3;
-  filter: grayscale(0.9);
-}
-
-.ones-stack {
-  display: grid;
-  grid-template-columns: repeat(5, 13px);
-  gap: 3px;
-}
-
-.one-cube {
-  width: 13px;
-  height: 13px;
-  border-radius: 3px;
-  border: 2px solid var(--ink);
-  background: #facc15;
-}
-
-.one-cube.group-b {
-  background: #4ade80;
-}
-
-.one-cube.removed {
-  opacity: 0.28;
-  background: #cbd5e1;
-}
-
-/* Step 2 Number Line Hop Visual */
-.number-line-box {
+.hint-voice-row {
   width: 100%;
-  background: #eff6ff;
-  border: 2.5px solid #38bdf8;
-  border-radius: 14px;
-  padding: 6px 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
   flex-wrap: wrap;
+}
+
+.hint-simple-cue {
   font-family: var(--font-display);
   font-size: 19px;
   font-weight: 700;
+  color: #92400e;
 }
 
-.nl-pill {
-  background: #ffffff;
-  border: 3px solid var(--ink);
-  border-radius: 12px;
-  padding: 2px 10px;
+.hear-again-btn {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 16px;
+  border-width: 3px;
+  box-shadow: 0 4px 0 var(--btn-shadow, #0369a1);
+}
+
+.counting-strip {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+}
+
+.count-anchor-badge {
+  min-width: 64px;
+  height: 64px;
+  padding: 0 12px;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: linear-gradient(180deg, #4ade80, #16a34a);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 5px 0 #15803d;
+  text-shadow: 0 2px 0 rgba(40, 26, 56, 0.5);
+  transition: transform 0.18s ease;
+}
+
+.count-anchor-badge.pulsing {
+  transform: scale(1.16);
+  box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.5), 0 5px 0 #15803d;
+}
+
+.count-op-sign {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
   color: var(--ink);
 }
 
-.nl-pill.highlight {
-  background: #fef08a;
+.count-items-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.nl-pill.mystery {
+.count-item-btn {
+  position: relative;
+  width: 58px;
+  height: 68px;
+  border-radius: 18px;
+  border: 3.5px solid var(--ink);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 2px;
+  box-shadow: 0 4px 0 rgba(40, 26, 56, 0.25);
+  transition: transform 0.14s ease, background 0.18s;
+}
+
+.count-item-btn:active {
+  transform: scale(1.12);
+}
+
+.count-item-btn.add-item.revealed {
   background: #bbf7d0;
-  border-style: dashed;
-  color: #15803d;
+  border-color: #15803d;
 }
 
-.nl-hop {
-  color: #0284c7;
-  font-size: 17px;
+.count-item-btn.sub-item.revealed {
+  background: #fed7aa;
+  border-color: #ea580c;
+}
+
+.count-item-btn.sub-item.revealed .count-item-icon {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.count-item-btn.next-tap {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.65), 0 4px 0 rgba(40, 26, 56, 0.25);
+}
+
+.count-item-btn.pulsing {
+  transform: scale(1.16);
+  box-shadow: 0 0 0 5px #facc15, 0 5px 0 rgba(40, 26, 56, 0.3);
+}
+
+.count-item-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.count-item-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.tap-finger-cue {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px;
+  pointer-events: none;
+  animation: char-idle-bob 0.75s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -892,6 +848,142 @@ button {
   font-size: 38px;
   opacity: 0.92;
   animation: dust-trail 0.5s ease-out infinite;
+}
+
+/* Gwi-Ma Boss Battle (Pop-Star Trio) */
+.gwima-sneaker {
+  position: relative;
+  cursor: pointer;
+  animation: gwima-hover 1.1s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.7));
+}
+
+.gwima-battle-arena {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 235px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 6px;
+  overflow: visible;
+}
+
+.gwima-heroes-cluster {
+  display: flex;
+  align-items: flex-end;
+  margin-left: -6px;
+  z-index: 3;
+}
+
+.gwima-heroes-cluster .char-actor {
+  margin-right: -28px;
+}
+
+.gwima-boss-blasted {
+  position: relative;
+  z-index: 3;
+  animation: gwima-shrink-defeat 3.1s ease-in-out forwards;
+  filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.85));
+}
+
+.gwima-flame-flicker {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: gwima-flicker 0.35s ease-in-out infinite alternate;
+}
+
+.rainbow-laser-beam {
+  position: absolute;
+  left: 34%;
+  bottom: 92px;
+  width: 44%;
+  height: 22px;
+  border-radius: 999px;
+  border: 3px solid #ffffff;
+  background: linear-gradient(90deg, #fde047, #f472b6, #38bdf8, #4ade80, #c084fc);
+  box-shadow: 0 0 18px #fde047, 0 0 28px #f472b6;
+  transform: rotate(-8deg);
+  z-index: 2;
+  animation: laser-pulse 0.24s ease-in-out infinite alternate;
+}
+
+.rainbow-laser-beam.beam-2 {
+  bottom: 66px;
+  transform: rotate(6deg);
+  animation-delay: 0.12s;
+}
+
+/* Panda Pals Bamboo Rain & Big-Scary Red Panda */
+.gag-clickable-prop {
+  position: relative;
+  cursor: pointer;
+  margin: 0 -10px;
+  z-index: 4;
+  transition: transform 0.15s ease;
+}
+
+.gag-clickable-prop:active {
+  transform: scale(1.12);
+}
+
+.panda-rain-stage {
+  overflow: hidden;
+}
+
+.bamboo-rain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.bamboo-rain-drop {
+  position: absolute;
+  top: -28px;
+  font-size: 36px;
+  animation: bamboo-drop 1.25s linear infinite;
+}
+
+.red-panda-tall {
+  transform: scale(1.06, 1.14);
+}
+
+/* JJ & Mikey Prank */
+.mikey-prank-hop {
+  animation: angry-bounce 0.32s ease-in-out infinite !important;
+}
+
+.jj-step-in {
+  transform: translateX(12px) scale(1.06);
+}
+
+@keyframes gwima-hover {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+}
+
+@keyframes gwima-flicker {
+  0% { transform: scale(0.97, 1.03); }
+  100% { transform: scale(1.03, 0.97); }
+}
+
+@keyframes gwima-shrink-defeat {
+  0% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
+  30% { transform: translateX(6px) rotate(-10deg) scale(1.04); opacity: 1; }
+  65% { transform: translateX(18px) rotate(14deg) scale(0.75); opacity: 0.95; }
+  100% { transform: translateX(65px) rotate(360deg) scale(0.15); opacity: 0; }
+}
+
+@keyframes laser-pulse {
+  0% { transform: scaleY(0.75) rotate(-7deg); opacity: 0.85; }
+  100% { transform: scaleY(1.25) rotate(-7deg); opacity: 1; }
+}
+
+@keyframes bamboo-drop {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(250px) rotate(260deg); opacity: 0.85; }
 }
 
 /* ============================================================

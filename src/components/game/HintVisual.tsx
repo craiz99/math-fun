@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MathProblem } from '../../game/types';
 import { soundEngine } from '../../audio/soundEngine';
 
@@ -6,164 +6,165 @@ interface HintVisualProps {
   problem: MathProblem;
   counterEmoji: string;
   hintLevel: 1 | 2;
+  walkthroughTrigger: number;
 }
 
-export function HintVisual({ problem, counterEmoji, hintLevel }: HintVisualProps) {
-  const [countedIndices, setCountedIndices] = useState<number[]>([]);
-  const { a, b, op, answer, hint } = problem;
+/**
+ * Simple, voice-guided Counting On / Counting Back visual for 5-year-olds.
+ * - Step 1: Big glowing start number + big tappable items that speak each count aloud!
+ * - Step 2 (or tapping "Hear Again"): Slowly animates & reads each step aloud in sync,
+ *   pausing on the final pulsing "?" item so the child discovers the answer proudly.
+ */
+export function HintVisual({
+  problem,
+  counterEmoji,
+  hintLevel,
+  walkthroughTrigger,
+}: HintVisualProps) {
+  const { hint } = problem;
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [activePulseIdx, setActivePulseIdx] = useState<number | null>(null);
+  const timersRef = useRef<number[]>([]);
 
-  const handleTapItem = (idx: number) => {
-    setCountedIndices((prev) => {
-      if (prev.includes(idx)) return prev;
-      const next = [...prev, idx];
-      soundEngine.playCount(next.length - 1);
-      return next;
-    });
-  };
+  const clearWalkTimers = useCallback(() => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  }, []);
 
-  const renderTenFrames = () => {
-    const totalSlots = op === '+' ? a + b : a;
-    const frameCount = totalSlots > 10 ? 2 : 1;
+  useEffect(() => clearWalkTimers, [clearWalkTimers]);
 
-    return (
-      <div className="tenframe-wrap">
-        {Array.from({ length: frameCount }).map((_, frameIdx) => (
-          <div key={frameIdx} className="tenframe-grid" aria-label={`Ten frame ${frameIdx + 1}`}>
-            {Array.from({ length: 10 }).map((__, slotIdx) => {
-              const globalIdx = frameIdx * 10 + slotIdx;
-              const isFilled = globalIdx < totalSlots;
-              const isRemoved = op === '-' && globalIdx >= answer && globalIdx < a;
-              const isGroupB = op === '+' && globalIdx >= a && globalIdx < totalSlots;
-              const isGroupA = isFilled && !isRemoved && !isGroupB;
-              const isCountable = isFilled && !isRemoved;
-              const countedOrder = countedIndices.indexOf(globalIdx);
+  const runGuidedWalkthrough = useCallback(() => {
+    clearWalkTimers();
+    soundEngine.stopSpeech();
 
-              return (
-                <button
-                  key={slotIdx}
-                  type="button"
-                  disabled={!isCountable}
-                  onClick={() => isCountable && handleTapItem(globalIdx)}
-                  className={[
-                    'tf-cell',
-                    isCountable ? 'tappable' : '',
-                    isGroupA ? 'group-a' : '',
-                    isGroupB ? 'group-b' : '',
-                    isRemoved ? 'removed' : '',
-                    countedOrder >= 0 ? 'counted' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  aria-label={isCountable ? `Count item ${globalIdx + 1}` : undefined}
-                >
-                  {isFilled ? counterEmoji : ''}
-                  {countedOrder >= 0 && <span className="tf-num">{countedOrder + 1}</span>}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
-  };
+    const startId = window.setTimeout(() => {
+      setRevealedCount(0);
+      setActivePulseIdx(-1);
+      const isAdd = hint.mode === 'count-on';
+      const intro = isAdd
+        ? `Start at ${hint.startNumber}!`
+        : `Start at ${hint.startNumber}, count back!`;
+      soundEngine.speak(intro, { rate: 0.9 });
+    }, 20);
+    timersRef.current.push(startId);
 
-  const renderBase10 = () => {
-    const tensA = Math.floor(a / 10);
-    const onesA = a % 10;
-    const tensB = Math.floor(b / 10);
-    const onesB = b % 10;
-
-    if (op === '+') {
-      return (
-        <div className="base10-wrap">
-          <div className="base10-group" aria-label={`${a} in base ten blocks`}>
-            {Array.from({ length: tensA }).map((_, i) => (
-              <div key={`ta-${i}`} className="ten-rod" />
-            ))}
-            {onesA > 0 && (
-              <div className="ones-stack">
-                {Array.from({ length: onesA }).map((_, i) => (
-                  <div key={`oa-${i}`} className="one-cube" />
-                ))}
-              </div>
-            )}
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700 }}>
-            +
-          </span>
-          <div className="base10-group" aria-label={`${b} in base ten blocks`}>
-            {Array.from({ length: tensB }).map((_, i) => (
-              <div key={`tb-${i}`} className="ten-rod" />
-            ))}
-            {onesB > 0 && (
-              <div className="ones-stack">
-                {Array.from({ length: onesB }).map((_, i) => (
-                  <div key={`ob-${i}`} className="one-cube group-b" />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      );
+    // Walk through every step except the very last one, pausing on "?" so the child discovers it!
+    const autoSteps = Math.max(0, hint.stepCount - 1);
+    for (let i = 0; i < autoSteps; i++) {
+      const delay = 1350 + i * 880;
+      const tId = window.setTimeout(() => {
+        setActivePulseIdx(i);
+        setRevealedCount((prev) => Math.max(prev, i + 1));
+        soundEngine.playCount(i);
+        soundEngine.speak(String(hint.stepValues[i]), { rate: 0.9 });
+      }, delay);
+      timersRef.current.push(tId);
     }
 
-    // Subtraction base-10 visual: show remaining tens/ones bright and removed dimmed
-    const remTens = Math.floor(answer / 10);
-    const remOnes = answer % 10;
-    return (
-      <div className="base10-wrap">
-        <div className="base10-group" aria-label={`${a} minus ${b} base ten visual`}>
-          {Array.from({ length: remTens }).map((_, i) => (
-            <div key={`rt-${i}`} className="ten-rod" />
-          ))}
-          {remOnes > 0 && (
-            <div className="ones-stack">
-              {Array.from({ length: remOnes }).map((_, i) => (
-                <div key={`ro-${i}`} className="one-cube" />
-              ))}
-            </div>
-          )}
-          {Array.from({ length: tensB }).map((_, i) => (
-            <div key={`xt-${i}`} className="ten-rod removed" />
-          ))}
-          {onesB > 0 && (
-            <div className="ones-stack">
-              {Array.from({ length: onesB }).map((_, i) => (
-                <div key={`xo-${i}`} className="one-cube removed" />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    // Pulse the final "?" item and invite the child to say or tap it!
+    const finalDelay = 1350 + autoSteps * 880 + 200;
+    const finalId = window.setTimeout(() => {
+      setActivePulseIdx(hint.stepCount - 1);
+      soundEngine.speak('Now what number comes next? Tap the last one to check!', {
+        rate: 0.9,
+      });
+    }, finalDelay);
+    timersRef.current.push(finalId);
+  }, [clearWalkTimers, hint]);
+
+  // Automatically play the guided spoken walkthrough when escalating to Step 2
+  useEffect(() => {
+    if (hintLevel === 2) {
+      runGuidedWalkthrough();
+    }
+  }, [hintLevel, walkthroughTrigger, runGuidedWalkthrough]);
+
+  const handleTapStep = (idx: number) => {
+    clearWalkTimers();
+    const targetCount = Math.max(revealedCount, idx + 1);
+    setRevealedCount(targetCount);
+    setActivePulseIdx(idx);
+    soundEngine.playCount(idx);
+    soundEngine.speak(String(hint.stepValues[idx]), { rate: 0.92 });
   };
 
+  const handleHearAgain = () => {
+    if (hintLevel === 2) {
+      runGuidedWalkthrough();
+    } else {
+      soundEngine.speak(hint.step1Spoken, { rate: 0.9 });
+    }
+  };
+
+  const isAdd = hint.mode === 'count-on';
+  const nextTapIdx = revealedCount < hint.stepCount ? revealedCount : null;
+
   return (
-    <div className="hint-panel" role="region" aria-label="Math strategy hint">
-      <div className="hint-header">
-        <span className="hint-badge">{hint.strategyTitle}</span>
-        <span>{hint.step1Text}</span>
+    <div className="hint-panel" role="region" aria-label="Voice-guided counting hint">
+      <div className="hint-voice-row">
+        <span className="hint-simple-cue">
+          {isAdd
+            ? `Start at ${hint.startNumber}, tap to count ${hint.stepCount} more!`
+            : `Start at ${hint.startNumber}, tap to count back ${hint.stepCount}!`}
+        </span>
+        <button
+          id="btn-hear-hint"
+          type="button"
+          className="jelly-btn jelly-blue hear-again-btn"
+          onClick={handleHearAgain}
+        >
+          🔊 Hear Again
+        </button>
       </div>
 
-      {hint.visualType === 'tenframe' ? renderTenFrames() : renderBase10()}
+      <div className="counting-strip">
+        {/* Giant Glowing Starting Number Anchor */}
+        <div
+          className={`count-anchor-badge ${activePulseIdx === -1 ? 'pulsing' : ''}`}
+          aria-label={`Start at ${hint.startNumber}`}
+        >
+          {hint.startNumber}
+        </div>
 
-      {hintLevel >= 2 && (
-        <div className="number-line-box" aria-label="Step by step jump hint">
-          <span className="nl-pill">{hint.numberLine.start}</span>
-          {hint.numberLine.hops.map((hop, idx) => {
-            const isLast = idx === hint.numberLine.hops.length - 1;
-            const hopText = hop.delta > 0 ? `+${hop.delta}` : `${hop.delta}`;
+        <span className="count-op-sign" aria-hidden="true">
+          {isAdd ? '+' : '−'}
+        </span>
+
+        {/* Big Tappable Glowing Counter Items */}
+        <div className="count-items-row">
+          {hint.stepValues.map((val, idx) => {
+            const isRevealed = idx < revealedCount;
+            const isNext = idx === nextTapIdx;
+            const isPulsing = idx === activePulseIdx;
+
             return (
-              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span className="nl-hop">── {hopText} ──▶</span>
-                <span className={`nl-pill ${isLast ? 'mystery' : 'highlight'}`}>
-                  {isLast ? '?' : hop.to}
-                </span>
-              </span>
+              <button
+                key={idx}
+                type="button"
+                className={[
+                  'count-item-btn',
+                  isAdd ? 'add-item' : 'sub-item',
+                  isRevealed ? 'revealed' : '',
+                  isNext ? 'next-tap' : '',
+                  isPulsing ? 'pulsing' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => handleTapStep(idx)}
+                aria-label={isRevealed ? `Count ${val}` : `Tap to count step ${idx + 1}`}
+              >
+                {isNext && (
+                  <span className="tap-finger-cue" aria-hidden="true">
+                    👇
+                  </span>
+                )}
+                <span className="count-item-icon">{counterEmoji}</span>
+                <span className="count-item-val">{isRevealed ? val : '?'}</span>
+              </button>
             );
           })}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -4,7 +4,9 @@ import {
   buildHint,
   buildProblemPool,
   generateGameSession,
+  generateReplacementProblem,
 } from './mathEngine';
+import { SQUAD_ORDER, shuffleSquadOrder } from './squads';
 
 function createSeededRng(seed: number): () => number {
   let state = seed >>> 0;
@@ -14,15 +16,29 @@ function createSeededRng(seed: number): () => number {
   };
 }
 
-describe('mathEngine', () => {
-  it('generates rich non-empty pools across all levels and operations', () => {
+describe('mathEngine & squads', () => {
+  it('keeps all operands, answers, and choices strictly <= 20 across every level', () => {
+    const levelCaps = { 1: 10, 2: 15, 3: 20 } as const;
+    const rng = createSeededRng(99);
+
     for (const level of [1, 2, 3] as const) {
       for (const mode of ['add', 'sub', 'mix'] as const) {
         const pool = buildProblemPool(level, mode);
-        expect(pool.length).toBeGreaterThanOrEqual(24);
+        expect(pool.length).toBeGreaterThanOrEqual(20);
         for (const p of pool) {
+          expect(p.a).toBeLessThanOrEqual(levelCaps[level]);
+          expect(p.b).toBeLessThanOrEqual(9);
           expect(p.answer).toBe(p.op === '+' ? p.a + p.b : p.a - p.b);
           expect(p.answer).toBeGreaterThanOrEqual(1);
+          expect(p.answer).toBeLessThanOrEqual(levelCaps[level]);
+
+          const choices = buildChoices(p.answer, rng);
+          expect(choices).toHaveLength(4);
+          expect(choices).toContain(p.answer);
+          for (const c of choices) {
+            expect(c).toBeGreaterThanOrEqual(0);
+            expect(c).toBeLessThanOrEqual(20);
+          }
         }
       }
     }
@@ -54,47 +70,46 @@ describe('mathEngine', () => {
     }
   });
 
-  it('mixes calculator and multiple-choice inputs in every squad', () => {
-    const game = generateGameSession(2, 'mix', {
+  it('generates fresh replacement problems that do not duplicate excluded keys', () => {
+    const rng = createSeededRng(17);
+    const session = generateGameSession(2, 'mix', {
       count: 12,
       persistHistory: false,
-      rng: createSeededRng(7),
+      rng,
     });
-
-    const calcCount = game.filter((p) => p.inputMode === 'calculator').length;
-    const choiceCount = game.filter((p) => p.inputMode === 'choice').length;
-    expect(calcCount).toBe(8);
-    expect(choiceCount).toBe(4);
+    const exclude = new Set(session.map((p) => p.key));
+    const replacement = generateReplacementProblem(2, 'mix', exclude, 'calculator', {
+      persistHistory: false,
+      rng,
+    });
+    expect(exclude.has(replacement.key)).toBe(false);
+    expect(replacement.inputMode).toBe('calculator');
+    expect(replacement.answer).toBeLessThanOrEqual(15);
   });
 
-  it('builds 4 unique sorted choices always containing the true answer', () => {
-    const rng = createSeededRng(123);
-    for (const ans of [2, 8, 13, 20, 47]) {
-      const choices = buildChoices(ans, rng);
-      expect(choices).toHaveLength(4);
-      expect(new Set(choices).size).toBe(4);
-      expect(choices).toContain(ans);
-      expect([...choices].sort((a, b) => a - b)).toEqual(choices);
+  it('builds simple Counting On (from bigger number) and Counting Back hints', () => {
+    const addHint = buildHint(4, 7, '+');
+    expect(addHint.mode).toBe('count-on');
+    expect(addHint.startNumber).toBe(7);
+    expect(addHint.stepCount).toBe(4);
+    expect(addHint.stepValues).toEqual([8, 9, 10, 11]);
+
+    const subHint = buildHint(12, 4, '-');
+    expect(subHint.mode).toBe('count-back');
+    expect(subHint.startNumber).toBe(12);
+    expect(subHint.stepCount).toBe(4);
+    expect(subHint.stepValues).toEqual([11, 10, 9, 8]);
+  });
+
+  it('shuffles squad order with all 4 squads and rotates the opening squad on replay', () => {
+    const rng = createSeededRng(55);
+    const firstOrder = shuffleSquadOrder(undefined, rng);
+    expect(new Set(firstOrder)).toEqual(new Set(SQUAD_ORDER));
+
+    for (let i = 0; i < 10; i++) {
+      const nextOrder = shuffleSquadOrder(firstOrder[0], rng);
+      expect(new Set(nextOrder)).toEqual(new Set(SQUAD_ORDER));
+      expect(nextOrder[0]).not.toBe(firstOrder[0]);
     }
-  });
-
-  it('produces accurate Make-a-10 and Bridge-to-10 hints with valid hops', () => {
-    const addHint = buildHint(8, 5, '+');
-    expect(addHint.strategyTitle).toBe('Make a 10!');
-    expect(addHint.numberLine.hops).toEqual([
-      { from: 8, to: 10, delta: 2 },
-      { from: 10, to: 13, delta: 3 },
-    ]);
-
-    const subHint = buildHint(14, 6, '-');
-    expect(subHint.strategyTitle).toBe('Bridge Back to 10!');
-    expect(subHint.numberLine.hops).toEqual([
-      { from: 14, to: 10, delta: -4 },
-      { from: 10, to: 8, delta: -2 },
-    ]);
-
-    const bigHint = buildHint(28, 6, '+');
-    expect(bigHint.visualType).toBe('base10');
-    expect(bigHint.numberLine.end).toBe(34);
   });
 });

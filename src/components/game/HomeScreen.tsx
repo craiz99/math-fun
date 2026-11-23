@@ -125,7 +125,7 @@ export function HomeScreen({
             className={`jelly-btn jelly-blue mode-btn ${level === 1 ? 'selected' : ''}`}
             onClick={() => onSelectLevel(1)}
           >
-            ⭐ Up to 15
+            ⭐ Up to 10
           </button>
           <button
             id="level-2"
@@ -133,7 +133,7 @@ export function HomeScreen({
             className={`jelly-btn jelly-purple mode-btn ${level === 2 ? 'selected' : ''}`}
             onClick={() => onSelectLevel(2)}
           >
-            🌟 Up to 20
+            🌟 Up to 15
           </button>
           <button
             id="level-3"
@@ -141,7 +141,7 @@ export function HomeScreen({
             className={`jelly-btn jelly-pink mode-btn ${level === 3 ? 'selected' : ''}`}
             onClick={() => onSelectLevel(3)}
           >
-            🚀 Up to 50
+            🚀 Up to 20
           </button>
           <button
             id="btn-start-game"
