@@ -1,10 +1,9 @@
 import type {
+  CountingHintData,
   DifficultyLevel,
-  HintData,
   InputMode,
   MathOperator,
   MathProblem,
-  NumberLineHop,
   OperationMode,
 } from './types';
 import { QUESTIONS_PER_SQUAD, SQUAD_ORDER } from './squads';
@@ -17,7 +16,8 @@ interface RawProblem {
   key: string;
 }
 
-const HISTORY_STORAGE_KEY = 'math-party-seen-v1';
+const HISTORY_STORAGE_KEY = 'math-party-seen-v3';
+const MAX_NUMBER = 20;
 
 function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
   const arr = [...items];
@@ -28,6 +28,12 @@ function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
   return arr;
 }
 
+/**
+ * Strictly <= 20 across all 3 levels, tuned to smaller, kid-friendly numbers:
+ * - Level 1: Up to 10
+ * - Level 2 (Default): Up to 15
+ * - Level 3: Up to 20
+ */
 export function buildProblemPool(
   level: DifficultyLevel,
   opMode: OperationMode
@@ -38,8 +44,29 @@ export function buildProblemPool(
 
   if (level === 1) {
     if (allowAdd) {
-      for (let a = 2; a <= 10; a++) {
-        for (let b = 2; b <= 9; b++) {
+      for (let a = 1; a <= 7; a++) {
+        for (let b = 1; b <= 6; b++) {
+          const sum = a + b;
+          if (sum >= 3 && sum <= 10) {
+            pool.push({ a, b, op: '+', answer: sum, key: `${a}+${b}` });
+          }
+        }
+      }
+    }
+    if (allowSub) {
+      for (let a = 3; a <= 10; a++) {
+        for (let b = 1; b <= 6; b++) {
+          const diff = a - b;
+          if (diff >= 1 && diff <= 9) {
+            pool.push({ a, b, op: '-', answer: diff, key: `${a}-${b}` });
+          }
+        }
+      }
+    }
+  } else if (level === 2) {
+    if (allowAdd) {
+      for (let a = 2; a <= 9; a++) {
+        for (let b = 2; b <= 7; b++) {
           const sum = a + b;
           if (sum >= 5 && sum <= 15) {
             pool.push({ a, b, op: '+', answer: sum, key: `${a}+${b}` });
@@ -49,7 +76,7 @@ export function buildProblemPool(
     }
     if (allowSub) {
       for (let a = 6; a <= 15; a++) {
-        for (let b = 2; b <= 9; b++) {
+        for (let b = 2; b <= 7; b++) {
           const diff = a - b;
           if (diff >= 1 && diff <= 12) {
             pool.push({ a, b, op: '-', answer: diff, key: `${a}-${b}` });
@@ -57,53 +84,26 @@ export function buildProblemPool(
         }
       }
     }
-  } else if (level === 2) {
+  } else {
+    // Level 3: Up to 20 (strictly <= 20)
     if (allowAdd) {
-      for (let a = 4; a <= 13; a++) {
-        for (let b = 3; b <= 10; b++) {
+      for (let a = 4; a <= 12; a++) {
+        for (let b = 2; b <= 9; b++) {
           const sum = a + b;
-          if (sum >= 10 && sum <= 20) {
+          if (sum >= 10 && sum <= MAX_NUMBER) {
             pool.push({ a, b, op: '+', answer: sum, key: `${a}+${b}` });
           }
         }
       }
     }
     if (allowSub) {
-      for (let a = 11; a <= 20; a++) {
-        for (let b = 3; b <= 9; b++) {
+      for (let a = 10; a <= MAX_NUMBER; a++) {
+        for (let b = 2; b <= 9; b++) {
           const diff = a - b;
           if (diff >= 2 && diff <= 15) {
             pool.push({ a, b, op: '-', answer: diff, key: `${a}-${b}` });
           }
         }
-      }
-    }
-  } else {
-    // Level 3: Super Challenge (up to 50)
-    if (allowAdd) {
-      for (let a = 15; a <= 42; a++) {
-        for (let b = 3; b <= 9; b++) {
-          const sum = a + b;
-          if (sum <= 50) {
-            pool.push({ a, b, op: '+', answer: sum, key: `${a}+${b}` });
-          }
-        }
-      }
-      for (let a = 12; a <= 39; a += 3) {
-        pool.push({ a, b: 10, op: '+', answer: a + 10, key: `${a}+10` });
-      }
-    }
-    if (allowSub) {
-      for (let a = 21; a <= 49; a++) {
-        for (let b = 3; b <= 9; b++) {
-          const diff = a - b;
-          if (diff >= 12) {
-            pool.push({ a, b, op: '-', answer: diff, key: `${a}-${b}` });
-          }
-        }
-      }
-      for (let a = 22; a <= 49; a += 3) {
-        pool.push({ a, b: 10, op: '-', answer: a - 10, key: `${a}-10` });
       }
     }
   }
@@ -116,139 +116,53 @@ export function buildChoices(
   rng: () => number = Math.random
 ): number[] {
   const candidates = new Set<number>([answer]);
-  const offsets = shuffle([-3, -2, -1, 1, 2, 3, -4, 4, 10, -10], rng);
+  const offsets = shuffle([-3, -2, -1, 1, 2, 3, -4, 4], rng);
 
   for (const offset of offsets) {
     if (candidates.size >= 4) break;
     const candidate = answer + offset;
-    if (candidate >= 0 && candidate <= 60) {
+    if (candidate >= 0 && candidate <= MAX_NUMBER) {
       candidates.add(candidate);
     }
   }
 
-  let fallback = answer + 1;
-  while (candidates.size < 4) {
-    if (fallback >= 0) candidates.add(fallback);
-    fallback++;
+  for (let fallback = 1; candidates.size < 4 && fallback <= MAX_NUMBER; fallback++) {
+    candidates.add(fallback);
   }
 
   return Array.from(candidates).sort((x, y) => x - y);
 }
 
-export function buildHint(a: number, b: number, op: MathOperator): HintData {
-  const answer = op === '+' ? a + b : a - b;
-  const maxVal = Math.max(a, answer);
-  const visualType: 'tenframe' | 'base10' = maxVal <= 20 ? 'tenframe' : 'base10';
-
+/**
+ * Simple, voice-first Counting On / Counting Back hint tailored for 5-year-olds.
+ * - Addition always starts from the bigger number and counts forward.
+ * - Subtraction starts from the first number and counts backward.
+ */
+export function buildHint(a: number, b: number, op: MathOperator): CountingHintData {
   if (op === '+') {
-    const nextTen = Math.ceil((a + 1) / 10) * 10;
-    const toTen = nextTen - a;
-
-    if (b === 10) {
-      return {
-        strategyTitle: 'Jump by 10!',
-        step1Text: `Start at ${a} and add 1 whole ten! Only the tens digit goes up by 1.`,
-        visualType,
-        numberLine: {
-          start: a,
-          end: answer,
-          hops: [{ from: a, to: answer, delta: 10 }],
-        },
-      };
-    }
-
-    if (a === b) {
-      return {
-        strategyTitle: 'Doubles Power!',
-        step1Text: `Two equal groups of ${a}! Count the blocks together to double ${a}.`,
-        visualType,
-        numberLine: {
-          start: a,
-          end: answer,
-          hops: [{ from: a, to: answer, delta: b }],
-        },
-      };
-    }
-
-    if (a < nextTen && a + b > nextTen && toTen > 0 && b - toTen > 0) {
-      const rem = b - toTen;
-      const hops: NumberLineHop[] = [
-        { from: a, to: nextTen, delta: toTen },
-        { from: nextTen, to: answer, delta: rem },
-      ];
-      return {
-        strategyTitle: nextTen === 10 ? 'Make a 10!' : `Make ${nextTen}!`,
-        step1Text: `${a} + ${toTen} makes ${nextTen}, then add ${rem} more!`,
-        visualType,
-        numberLine: { start: a, end: answer, hops },
-      };
-    }
-
-    if (Math.abs(a - b) === 1 && a <= 10 && b <= 10) {
-      const small = Math.min(a, b);
-      return {
-        strategyTitle: 'Near-Double Trick!',
-        step1Text: `${small} + ${small} is ${small * 2}, then just add 1 more!`,
-        visualType,
-        numberLine: {
-          start: a,
-          end: answer,
-          hops: [{ from: a, to: answer, delta: b }],
-        },
-      };
-    }
-
+    const startNumber = Math.max(a, b);
+    const stepCount = Math.min(a, b);
+    const stepValues = Array.from({ length: stepCount }, (_, i) => startNumber + i + 1);
     return {
-      strategyTitle: 'Count On!',
-      step1Text: `Start at ${a} and count up ${b} more using the blocks!`,
-      visualType,
-      numberLine: {
-        start: a,
-        end: answer,
-        hops: [{ from: a, to: answer, delta: b }],
-      },
+      mode: 'count-on',
+      startNumber,
+      stepCount,
+      stepValues,
+      equationSpoken: `What is ${a} plus ${b}?`,
+      step1Spoken: `Let's count on together! Start at ${startNumber}, and tap each one to count ${stepCount} more!`,
     };
   }
 
-  // Subtraction hints
-  if (b === 10) {
-    return {
-      strategyTitle: 'Jump Back 10!',
-      step1Text: `Start at ${a} and take away 1 whole ten! Only the tens digit goes down by 1.`,
-      visualType,
-      numberLine: {
-        start: a,
-        end: answer,
-        hops: [{ from: a, to: answer, delta: -10 }],
-      },
-    };
-  }
-
-  const lowerTen = Math.floor((a - 1) / 10) * 10;
-  const toLowerTen = a - lowerTen;
-  if (lowerTen >= 10 && a > lowerTen && answer < lowerTen && b - toLowerTen > 0) {
-    const rem = b - toLowerTen;
-    const hops: NumberLineHop[] = [
-      { from: a, to: lowerTen, delta: -toLowerTen },
-      { from: lowerTen, to: answer, delta: -rem },
-    ];
-    return {
-      strategyTitle: lowerTen === 10 ? 'Bridge Back to 10!' : `Bridge to ${lowerTen}!`,
-      step1Text: `${a} take away ${toLowerTen} makes ${lowerTen}, then take away ${rem} more!`,
-      visualType,
-      numberLine: { start: a, end: answer, hops },
-    };
-  }
-
+  const startNumber = a;
+  const stepCount = b;
+  const stepValues = Array.from({ length: stepCount }, (_, i) => startNumber - i - 1);
   return {
-    strategyTitle: 'Take Away & Count Left!',
-    step1Text: `Start with ${a}, cross out ${b}, and see how many are still glowing!`,
-    visualType,
-    numberLine: {
-      start: a,
-      end: answer,
-      hops: [{ from: a, to: answer, delta: -b }],
-    },
+    mode: 'count-back',
+    startNumber,
+    stepCount,
+    stepValues,
+    equationSpoken: `What is ${a} take away ${b}?`,
+    step1Spoken: `Let's count back together! Start at ${startNumber}, and tap each one to count back ${stepCount}!`,
   };
 }
 
@@ -279,6 +193,25 @@ function isCommutativeMirror(prev: RawProblem | undefined, next: RawProblem): bo
   return prev.a === next.b && prev.b === next.a;
 }
 
+function toMathProblem(
+  raw: RawProblem,
+  inputMode: InputMode,
+  idx: number,
+  rng: () => number
+): MathProblem {
+  return {
+    id: `${raw.key}-${idx}-${Math.floor(rng() * 100000)}`,
+    key: raw.key,
+    a: raw.a,
+    b: raw.b,
+    op: raw.op,
+    answer: raw.answer,
+    inputMode,
+    choices: buildChoices(raw.answer, rng),
+    hint: buildHint(raw.a, raw.b, raw.op),
+  };
+}
+
 export function generateGameSession(
   level: DifficultyLevel,
   opMode: OperationMode,
@@ -306,8 +239,6 @@ export function generateGameSession(
     rng
   );
 
-  // If fewer unseen problems remain than needed, top up from a fresh shuffled pool
-  // without duplicating anything already selected for this game.
   if (available.length < count) {
     const alreadyInAvailable = new Set(available.map((p) => p.key));
     const refill = shuffle(
@@ -318,7 +249,6 @@ export function generateGameSession(
     available = [...available, ...refill];
   }
 
-  // Balance '+' and '-' in mix mode while avoiding back-to-back commutative mirrors.
   const selected: RawProblem[] = [];
   const usedKeys = new Set<string>();
 
@@ -354,22 +284,49 @@ export function generateGameSession(
     saveSeenKeys(bucketKey, seen);
   }
 
-  // Mix calculator free-input (2 per 3-question squad) and multiple-choice (1 per squad).
   const inputModes: InputMode[] = [];
   const squadCount = Math.ceil(count / QUESTIONS_PER_SQUAD);
   for (let s = 0; s < squadCount; s++) {
     inputModes.push(...shuffle<InputMode>(['calculator', 'calculator', 'choice'], rng));
   }
 
-  return selected.map((raw, idx) => ({
-    id: `${raw.key}-${idx}-${Math.floor(rng() * 100000)}`,
-    key: raw.key,
-    a: raw.a,
-    b: raw.b,
-    op: raw.op,
-    answer: raw.answer,
-    inputMode: inputModes[idx] ?? 'calculator',
-    choices: buildChoices(raw.answer, rng),
-    hint: buildHint(raw.a, raw.b, raw.op),
-  }));
+  return selected.map((raw, idx) =>
+    toMathProblem(raw, inputModes[idx] ?? 'calculator', idx, rng)
+  );
+}
+
+/** Generate a fresh replacement problem when the child taps the "New" button. */
+export function generateReplacementProblem(
+  level: DifficultyLevel,
+  opMode: OperationMode,
+  excludeKeys: Set<string>,
+  inputMode: InputMode,
+  options?: { persistHistory?: boolean; rng?: () => number }
+): MathProblem {
+  const rng = options?.rng ?? Math.random;
+  const persist = options?.persistHistory ?? true;
+  const bucketKey = `${level}:${opMode}`;
+  const fullPool = buildProblemPool(level, opMode);
+  const seen = persist ? loadSeenKeys(bucketKey) : new Set<string>();
+
+  let candidates = shuffle(
+    fullPool.filter((p) => !excludeKeys.has(p.key) && !seen.has(p.key)),
+    rng
+  );
+  if (candidates.length === 0) {
+    candidates = shuffle(
+      fullPool.filter((p) => !excludeKeys.has(p.key)),
+      rng
+    );
+  }
+  if (candidates.length === 0) {
+    candidates = shuffle(fullPool, rng);
+  }
+
+  const chosen = candidates[0];
+  if (persist) {
+    seen.add(chosen.key);
+    saveSeenKeys(bucketKey, seen);
+  }
+  return toMathProblem(chosen, inputMode, Date.now() % 10000, rng);
 }

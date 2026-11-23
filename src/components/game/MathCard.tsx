@@ -7,7 +7,10 @@ interface MathCardProps {
   typedValue: string;
   answerState: 'idle' | 'correct' | 'wrong';
   hintLevel: 0 | 1 | 2;
+  walkthroughTrigger: number;
   onRequestHint: () => void;
+  onNewProblem: () => void;
+  onReadEquation: () => void;
 }
 
 export function MathCard({
@@ -16,7 +19,10 @@ export function MathCard({
   typedValue,
   answerState,
   hintLevel,
+  walkthroughTrigger,
   onRequestHint,
+  onNewProblem,
+  onReadEquation,
 }: MathCardProps) {
   const displayOp = problem.op === '-' ? '−' : '+';
   const displayAnswer =
@@ -42,17 +48,40 @@ export function MathCard({
           {squad.badgeEmoji} {squad.name}
         </span>
 
-        <button
-          id="btn-hint"
-          type="button"
-          className="jelly-btn jelly-yellow hint-trigger-btn"
-          onClick={onRequestHint}
-        >
-          💡 {hintLevel === 0 ? 'Hint' : hintLevel === 1 ? 'More Hint' : 'Hint On!'}
-        </button>
+        <div className="math-card-actions">
+          <button
+            id="btn-new-problem"
+            type="button"
+            disabled={answerState === 'correct'}
+            className="jelly-btn jelly-blue card-action-btn"
+            onClick={onNewProblem}
+            title="Get a different problem"
+          >
+            🔄 New
+          </button>
+
+          <button
+            id="btn-hint"
+            type="button"
+            className="jelly-btn jelly-yellow card-action-btn"
+            onClick={onRequestHint}
+          >
+            💡 {hintLevel === 0 ? 'Hint' : 'Count With Me'}
+          </button>
+        </div>
       </div>
 
       <div className="equation-row" aria-live="polite">
+        <button
+          id="btn-read-equation"
+          type="button"
+          className="equation-speak-btn"
+          onClick={onReadEquation}
+          aria-label="Read math problem aloud"
+          title="Read aloud"
+        >
+          🔊
+        </button>
         <span>{problem.a}</span>
         <span>{displayOp}</span>
         <span>{problem.b}</span>
@@ -66,6 +95,7 @@ export function MathCard({
           problem={problem}
           counterEmoji={squad.counterEmoji}
           hintLevel={hintLevel}
+          walkthroughTrigger={walkthroughTrigger}
         />
       )}
     </section>

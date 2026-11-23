@@ -307,3 +307,26 @@ export function RedPandaSvg({ reaction = 'idle', size = 142 }: CharProps) {
     </svg>
   );
 }
+
+/** Wobbly tall bamboo snack tower that Red Panda accidentally knocks over! */
+export function BambooTowerSvg({ size = 135 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 120 160" fill="none" aria-label="Wobbly Bamboo Tower">
+      <ellipse cx="60" cy="150" rx="34" ry="7" fill="rgba(40,26,56,0.18)" />
+      {/* Stacked green & golden bamboo bundles */}
+      <g className="bg-sway-slow" style={{ transformOrigin: '60px 148px' }}>
+        <rect x="34" y="108" width="52" height="36" rx="10" fill="#22c55e" stroke={INK} strokeWidth="4" />
+        <line x1="50" y1="108" x2="50" y2="144" stroke={INK} strokeWidth="3" />
+        <line x1="70" y1="108" x2="70" y2="144" stroke={INK} strokeWidth="3" />
+
+        <rect x="38" y="72" width="44" height="36" rx="10" fill="#4ade80" stroke={INK} strokeWidth="4" />
+        <line x1="60" y1="72" x2="60" y2="108" stroke={INK} strokeWidth="3" />
+
+        <rect x="44" y="38" width="32" height="34" rx="10" fill="#facc15" stroke={INK} strokeWidth="4" />
+        <ellipse cx="32" cy="48" rx="14" ry="6" transform="rotate(-24 32 48)" fill="#22c55e" stroke={INK} strokeWidth="3" />
+        <ellipse cx="88" cy="46" rx="14" ry="6" transform="rotate(24 88 46)" fill="#22c55e" stroke={INK} strokeWidth="3" />
+      </g>
+    </svg>
+  );
+}
+

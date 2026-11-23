@@ -1,6 +1,6 @@
 /**
- * Procedural Web Audio Pop Music + Cartoon SFX + Voice Helper.
- * Zero external audio assets needed; safely unlocks on first iPad Safari tap.
+ * Procedural Web Audio Pop Music + Cartoon SFX + iPad-Reliable Voice Helper.
+ * Automatically ducks pop music while speaking hints so a 5-year-old hears every word clearly.
  */
 
 const NOTE_FREQ: Record<string, number> = {
@@ -27,7 +27,6 @@ const NOTE_FREQ: Record<string, number> = {
   C6: 1046.5,
 };
 
-// Catchy 32-step (2-bar x 2) bubblegum K-pop synth groove at ~118 BPM (16th notes)
 const MELODY_STEPS: (string | null)[] = [
   'E5', null, 'G5', null, 'A5', 'G5', 'E5', null,
   'D5', null, 'G5', null, 'B4', null, 'D5', null,
@@ -49,6 +48,12 @@ const CHORD_STEPS: (string[] | null)[] = [
   ['F3', 'A3', 'C4'], null, null, null, ['G3', 'B3', 'D4'], null, null, null,
 ];
 
+interface SpeakOptions {
+  rate?: number;
+  pitch?: number;
+  onEnd?: () => void;
+}
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private musicTimer: number | null = null;
@@ -56,6 +61,31 @@ class SoundEngine {
   private musicEnabled = true;
   private voiceEnabled = true;
   private partyBoost = false;
+  private musicDucked = false;
+  private duckResetTimer: number | null = null;
+  private speechPrimed = false;
+  private cachedVoice: SpeechSynthesisVoice | null = null;
+  // Keep reference alive so Safari never garbage-collects onend handlers mid-speech.
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
+
+  constructor() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const refreshVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        this.cachedVoice =
+          voices.find(
+            (v) =>
+              v.lang.startsWith('en') &&
+              /samantha|karen|google us english|zira|moira|tessa/i.test(v.name)
+          ) ??
+          voices.find((v) => v.lang.startsWith('en-US')) ??
+          voices.find((v) => v.lang.startsWith('en')) ??
+          null;
+      };
+      refreshVoice();
+      window.speechSynthesis.addEventListener?.('voiceschanged', refreshVoice);
+    }
+  }
 
   private getContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
@@ -75,9 +105,19 @@ class SoundEngine {
 
   public unlock(): void {
     const ctx = this.getContext();
-    if (!ctx) return;
-    if (this.musicEnabled && this.musicTimer === null) {
+    if (ctx && this.musicEnabled && this.musicTimer === null) {
       this.startMusicLoop();
+    }
+    // Synchronously prime iOS Safari speechSynthesis inside the first tap gesture.
+    if (!this.speechPrimed && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      this.speechPrimed = true;
+      try {
+        const primer = new SpeechSynthesisUtterance('');
+        primer.volume = 0;
+        window.speechSynthesis.speak(primer);
+      } catch {
+        // Ignore if unavailable.
+      }
     }
   }
 
@@ -93,13 +133,27 @@ class SoundEngine {
 
   public setVoiceEnabled(enabled: boolean): void {
     this.voiceEnabled = enabled;
-    if (!enabled && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    if (!enabled) {
+      this.stopSpeech();
     }
   }
 
   public setPartyBoost(active: boolean): void {
     this.partyBoost = active;
+  }
+
+  private setMusicDucked(ducked: boolean, maxMs = 4500): void {
+    if (this.duckResetTimer !== null) {
+      window.clearTimeout(this.duckResetTimer);
+      this.duckResetTimer = null;
+    }
+    this.musicDucked = ducked;
+    if (ducked) {
+      this.duckResetTimer = window.setTimeout(() => {
+        this.musicDucked = false;
+        this.duckResetTimer = null;
+      }, maxMs);
+    }
   }
 
   private startMusicLoop(): void {
@@ -182,9 +236,9 @@ class SoundEngine {
   }
 
   private playMusicStep(ctx: AudioContext, step: number): void {
-    const volScale = this.partyBoost ? 1.25 : 0.9;
+    const duckFactor = this.musicDucked ? 0.2 : 1;
+    const volScale = (this.partyBoost ? 1.25 : 0.9) * duckFactor;
 
-    // Pop four-on-the-floor kick & bouncy backbeat clap
     if (step % 4 === 0) {
       this.playKick(ctx, 0.11 * volScale);
     }
@@ -209,7 +263,7 @@ class SoundEngine {
     const melody = MELODY_STEPS[step];
     if (melody && NOTE_FREQ[melody]) {
       this.playTone(ctx, NOTE_FREQ[melody], 0.19, 'triangle', 0.055 * volScale);
-      if (this.partyBoost) {
+      if (this.partyBoost && !this.musicDucked) {
         this.playTone(ctx, NOTE_FREQ[melody] * 2, 0.12, 'sine', 0.025);
       }
     }
@@ -242,7 +296,6 @@ class SoundEngine {
   public playWrong(): void {
     const ctx = this.getContext();
     if (!ctx) return;
-    // Soft, friendly cartoon boing — never a harsh buzzer!
     this.playTone(ctx, 320, 0.16, 'sine', 0.13, 0, 240);
     this.playTone(ctx, 250, 0.2, 'sine', 0.1, 0.12, 290);
   }
@@ -257,16 +310,62 @@ class SoundEngine {
   public playRaccoonChase(): void {
     const ctx = this.getContext();
     if (!ctx) return;
-    // Rapid fierce chicken battle squawks + cartoon bonk + raccoon flee whistle!
     [0, 0.18, 0.36, 0.62, 0.8].forEach((offset, idx) => {
       const base = idx % 2 === 0 ? 700 : 820;
       this.playTone(ctx, base, 0.09, 'sawtooth', 0.085, offset, base + 340);
       this.playTone(ctx, base + 220, 0.08, 'triangle', 0.07, offset + 0.06, 440);
     });
-    // Comedic cartoon "BONK!"
     this.playTone(ctx, 260, 0.14, 'triangle', 0.16, 0.48, 520);
-    // Classic fleeing slide-whistle zip off screen!
     this.playTone(ctx, 420, 0.42, 'sine', 0.12, 1.05, 1480);
+  }
+
+  /** Silly cartoon wah-wah-boing for Mikey's wrong-answer prank! */
+  public playPrankFakeout(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 460, 0.18, 'triangle', 0.16, 0, 415);
+    this.playTone(ctx, 415, 0.18, 'triangle', 0.16, 0.2, 370);
+    this.playTone(ctx, 370, 0.32, 'sawtooth', 0.08, 0.4, 240);
+  }
+
+  /** Fun dramatic synth rumble when cartoon Gwi-Ma appears on stage! */
+  public playGwimaArrival(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 180, 0.35, 'sawtooth', 0.09, 0, 110);
+    this.playTone(ctx, 260, 0.28, 'triangle', 0.1, 0.12, 165);
+  }
+
+  /** Sparkling rainbow star-laser blast defeating Gwi-Ma! */
+  public playGwimaBlast(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    // Star-beam laser zaps
+    [0, 0.14, 0.28].forEach((t) => {
+      this.playTone(ctx, 1320, 0.16, 'sawtooth', 0.075, t, 480);
+      this.playTone(ctx, 880, 0.18, 'triangle', 0.1, t + 0.04, 1560);
+    });
+    // Pop-star sparkle victory chord + Gwi-Ma dizzy shrink whistle
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      this.playTone(ctx, f, 0.35, 'triangle', 0.12, 0.48 + i * 0.04);
+    });
+    this.playTone(ctx, 920, 0.45, 'sine', 0.11, 0.78, 220);
+  }
+
+  /** Playful boing-bonk + bamboo marimba rain for Panda Pals gag! */
+  public playBambooRain(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    // Red Panda "RAWR!" bounce
+    this.playTone(ctx, 280, 0.18, 'triangle', 0.15, 0, 540);
+    // Bamboo shoot tumble marimba clatter
+    const clatter = [784, 659, 880, 587, 988, 698, 1046];
+    clatter.forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.1, 'triangle', 0.11, 0.22 + i * 0.075);
+    });
+    // Giant Panda happy chomp
+    this.playTone(ctx, 320, 0.1, 'sine', 0.14, 0.82, 220);
+    this.playTone(ctx, 360, 0.1, 'sine', 0.14, 0.98, 240);
   }
 
   public playWinFanfare(): void {
@@ -287,28 +386,55 @@ class SoundEngine {
   }
 
   public stopSpeech(): void {
+    this.setMusicDucked(false);
+    this.activeUtterance = null;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Ignore.
+      }
     }
   }
 
-  public speak(text: string): void {
-    if (!this.voiceEnabled || typeof window === 'undefined') return;
-    if (!('speechSynthesis' in window)) return;
+  public speak(text: string, options?: SpeakOptions): void {
+    if (!this.voiceEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      options?.onEnd?.();
+      return;
+    }
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.02;
-      utterance.pitch = 1.18;
-      utterance.volume = 0.9;
-      const voices = window.speechSynthesis.getVoices();
-      const friendlyVoice = voices.find(
-        (v) => v.lang.startsWith('en') && /samantha|google us|karen|zira/i.test(v.name)
-      );
-      if (friendlyVoice) utterance.voice = friendlyVoice;
+      utterance.lang = 'en-US';
+      utterance.rate = options?.rate ?? 0.96;
+      utterance.pitch = options?.pitch ?? 1.15;
+      utterance.volume = 1.0;
+      if (this.cachedVoice) {
+        utterance.voice = this.cachedVoice;
+      }
+
+      this.activeUtterance = utterance;
+      const estimatedMs = Math.max(1800, text.length * 85);
+      this.setMusicDucked(true, estimatedMs + 800);
+
+      utterance.onend = () => {
+        if (this.activeUtterance === utterance) {
+          this.activeUtterance = null;
+          this.setMusicDucked(false);
+        }
+        options?.onEnd?.();
+      };
+      utterance.onerror = () => {
+        if (this.activeUtterance === utterance) {
+          this.activeUtterance = null;
+          this.setMusicDucked(false);
+        }
+      };
+
       window.speechSynthesis.speak(utterance);
     } catch {
-      // Speech synthesis is optional enhancement.
+      this.setMusicDucked(false);
+      options?.onEnd?.();
     }
   }
 }

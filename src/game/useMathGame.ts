@@ -4,6 +4,8 @@ import type {
   MathProblem,
   OperationMode,
   ReactionState,
+  SquadId,
+  StageGagState,
 } from './types';
 import {
   QUESTIONS_PER_SQUAD,
@@ -11,10 +13,13 @@ import {
   SQUAD_ORDER,
   TOTAL_QUESTIONS,
   pickRandomLine,
+  shuffleSquadOrder,
 } from './squads';
-import { generateGameSession } from './mathEngine';
+import {
+  generateGameSession,
+  generateReplacementProblem,
+} from './mathEngine';
 import { soundEngine } from '../audio/soundEngine';
-import type { RaccoonEventPhase } from '../components/characters/SquadStage';
 
 export type ScreenMode = 'home' | 'play' | 'win';
 
@@ -25,6 +30,9 @@ export function useMathGame() {
   const [musicOn, setMusicOn] = useState(true);
   const [voiceOn, setVoiceOn] = useState(true);
 
+  const [squadOrder, setSquadOrder] = useState<SquadId[]>(SQUAD_ORDER);
+  const lastFirstSquadRef = useRef<SquadId | undefined>(undefined);
+
   const [problems, setProblems] = useState<MathProblem[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [typedValue, setTypedValue] = useState('');
@@ -32,11 +40,12 @@ export function useMathGame() {
   const [reaction, setReaction] = useState<ReactionState>('idle');
   const [speechText, setSpeechText] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState<0 | 1 | 2>(0);
+  const [walkthroughTrigger, setWalkthroughTrigger] = useState(0);
   const [eliminatedChoices, setEliminatedChoices] = useState<number[]>([]);
   const [attemptsOnCurrent, setAttemptsOnCurrent] = useState(0);
   const [firstTryCount, setFirstTryCount] = useState(0);
   const [squadToast, setSquadToast] = useState<string | null>(null);
-  const [raccoonPhase, setRaccoonPhase] = useState<RaccoonEventPhase>('none');
+  const [gagState, setGagState] = useState<StageGagState>({ kind: 'none' });
 
   const timersRef = useRef<number[]>([]);
 
@@ -53,26 +62,25 @@ export function useMathGame() {
   useEffect(() => clearTimers, [clearTimers]);
 
   const activeSquadIdx = Math.min(
-    SQUAD_ORDER.length - 1,
+    squadOrder.length - 1,
     Math.floor(questionIndex / QUESTIONS_PER_SQUAD)
   );
-  const activeSquadId = SQUAD_ORDER[activeSquadIdx];
+  const activeSquadId = squadOrder[activeSquadIdx] ?? SQUAD_ORDER[0];
   const activeSquad = SQUADS[activeSquadId];
   const currentProblem = problems[questionIndex] ?? null;
 
   const prepareQuestion = useCallback(
-    (nextIdx: number) => {
+    (nextIdx: number, order: SquadId[]) => {
       setTypedValue('');
       setAnswerState('idle');
       setReaction('idle');
       setHintLevel(0);
       setEliminatedChoices([]);
       setAttemptsOnCurrent(0);
+      setGagState({ kind: 'none' });
 
       const nextSquadId =
-        SQUAD_ORDER[
-          Math.min(SQUAD_ORDER.length - 1, Math.floor(nextIdx / QUESTIONS_PER_SQUAD))
-        ];
+        order[Math.min(order.length - 1, Math.floor(nextIdx / QUESTIONS_PER_SQUAD))];
       const stepInSquad = nextIdx % QUESTIONS_PER_SQUAD;
 
       if (stepInSquad === 0) {
@@ -85,16 +93,22 @@ export function useMathGame() {
         setSpeechText(null);
       }
 
-      // Guaranteed raccoon sneak on Chicken Q2, plus 50% surprise chance on Q3!
-      const shouldSneak =
-        nextSquadId === 'chickens' &&
-        (stepInSquad === 1 || (stepInSquad === 2 && Math.random() < 0.5));
-
-      setRaccoonPhase('none');
-      if (shouldSneak) {
+      // Stage-specific interactive gags appear on Question 2 of each squad!
+      if (nextSquadId === 'chickens' && (stepInSquad === 1 || (stepInSquad === 2 && Math.random() < 0.45))) {
         schedule(() => {
-          setRaccoonPhase('sneaking');
+          setGagState({ kind: 'raccoon-sneaking' });
           setSpeechText('Bawk! A sneaky raccoon! Tap him or solve the math!');
+        }, 900);
+      } else if (nextSquadId === 'popstars' && stepInSquad === 1) {
+        schedule(() => {
+          setGagState({ kind: 'gwima-arrives' });
+          setSpeechText('Whoa! Gwi-Ma is here! Tap him or solve to blast him!');
+          soundEngine.playGwimaArrival();
+        }, 900);
+      } else if (nextSquadId === 'pandas' && stepInSquad === 1) {
+        schedule(() => {
+          setGagState({ kind: 'panda-tower' });
+          setSpeechText('Ooh! A giant wobbly bamboo tower!');
         }, 900);
       }
     },
@@ -109,6 +123,10 @@ export function useMathGame() {
       soundEngine.setPartyBoost(false);
       soundEngine.playTap();
 
+      const nextOrder = shuffleSquadOrder(lastFirstSquadRef.current);
+      lastFirstSquadRef.current = nextOrder[0];
+      setSquadOrder(nextOrder);
+
       const freshProblems = generateGameSession(selectedLevel, selectedOp, {
         count: TOTAL_QUESTIONS,
       });
@@ -116,29 +134,100 @@ export function useMathGame() {
       setQuestionIndex(0);
       setFirstTryCount(0);
       setScreen('play');
-      prepareQuestion(0);
+      prepareQuestion(0, nextOrder);
     },
     [clearTimers, level, opMode, prepareQuestion]
   );
 
-  const triggerRaccoonChase = useCallback(() => {
-    setRaccoonPhase('chasing');
-    setSpeechText(null);
-    soundEngine.playRaccoonChase();
-    soundEngine.speak('Bawk! Peck attack! Shoo, raccoon!');
+  const triggerStageGag = useCallback(() => {
+    if (gagState.kind === 'raccoon-sneaking') {
+      setGagState({ kind: 'raccoon-chasing' });
+      setSpeechText(null);
+      soundEngine.playRaccoonChase();
+      soundEngine.speak('Bawk! Peck attack! Shoo, raccoon!');
+      schedule(() => {
+        setGagState({ kind: 'raccoon-victory' });
+        setSpeechText('HAHA! Hero Chickens sent that raccoon flying!!');
+      }, 3150);
+      return;
+    }
 
-    schedule(() => {
-      setRaccoonPhase('victory');
-      setSpeechText('HAHA! Hero Chickens sent that raccoon flying!!');
-    }, 3150);
-  }, [schedule]);
+    if (gagState.kind === 'gwima-arrives') {
+      setGagState({ kind: 'gwima-blasted' });
+      setSpeechText(null);
+      soundEngine.playGwimaBlast();
+      soundEngine.speak('Star power! Pop blast! Bye bye, Gwi-Ma!');
+      schedule(() => {
+        setGagState({ kind: 'gwima-victory' });
+        setSpeechText('WOOHOO!! Pop-Star Trio blasted Gwi-Ma away!!');
+      }, 3100);
+      return;
+    }
+
+    if (gagState.kind === 'panda-tower') {
+      setGagState({ kind: 'panda-rain' });
+      setSpeechText(null);
+      soundEngine.playBambooRain();
+      soundEngine.speak('Rawr! I am big and scary! Whoa, bamboo rain! Nom nom nom!');
+      schedule(() => {
+        setGagState({ kind: 'none' });
+        setSpeechText('Hehe! Delicious bamboo rain!!');
+      }, 3100);
+    }
+  }, [gagState.kind, schedule]);
+
+  const advanceAfterCorrect = useCallback(
+    (delayMs: number) => {
+      schedule(() => {
+        const nextIdx = questionIndex + 1;
+        if (nextIdx >= problems.length) {
+          setScreen('win');
+          soundEngine.setPartyBoost(true);
+          soundEngine.playWinFanfare();
+          soundEngine.speak('You win!! Every single squad is cheering for you!!');
+        } else {
+          setQuestionIndex(nextIdx);
+          prepareQuestion(nextIdx, squadOrder);
+        }
+      }, delayMs);
+    },
+    [prepareQuestion, problems.length, questionIndex, schedule, squadOrder]
+  );
 
   const submitAnswer = useCallback(
     (guess: number) => {
       if (!currentProblem || answerState === 'correct') return;
 
       if (guess === currentProblem.answer) {
+        const stepInSquad = questionIndex % QUESTIONS_PER_SQUAD;
         setAnswerState('correct');
+
+        if (attemptsOnCurrent === 0) {
+          setFirstTryCount((c) => c + 1);
+        }
+
+        // JJ & Mikey Prank! On Q2 of JJ & Mikey, Mikey pretends they got it wrong, then JJ corrects him!
+        if (activeSquadId === 'jjmikey' && stepInSquad === 1) {
+          setGagState({ kind: 'mikey-prank' });
+          setReaction('encourage');
+          setSpeechText(null);
+          soundEngine.playPrankFakeout();
+          soundEngine.speak('Wait a second... wrong! Hehehe!');
+
+          schedule(() => {
+            setGagState({ kind: 'jj-corrects' });
+            setReaction('happy');
+            soundEngine.playCorrect();
+            soundEngine.speak(
+              `Mikey! Stop pranking! You got it right! The answer is ${currentProblem.answer}!`
+            );
+          }, 1800);
+
+          advanceAfterCorrect(4300);
+          return;
+        }
+
+        // Standard cheerful celebration (plus launching any active stage gag!)
         setReaction('happy');
         const cheer = pickRandomLine(
           activeSquad.correctLines,
@@ -148,38 +237,27 @@ export function useMathGame() {
         soundEngine.playCorrect();
         soundEngine.speak(`${cheer} ${currentProblem.answer}!`);
 
-        if (attemptsOnCurrent === 0) {
-          setFirstTryCount((c) => c + 1);
+        const hasWaitingGag =
+          gagState.kind === 'raccoon-sneaking' ||
+          gagState.kind === 'gwima-arrives' ||
+          gagState.kind === 'panda-tower';
+        const isGagMidAction =
+          gagState.kind === 'raccoon-chasing' ||
+          gagState.kind === 'gwima-blasted' ||
+          gagState.kind === 'panda-rain';
+
+        if (hasWaitingGag) {
+          schedule(() => triggerStageGag(), 450);
+          advanceAfterCorrect(3900);
+        } else if (isGagMidAction) {
+          advanceAfterCorrect(2400);
+        } else {
+          advanceAfterCorrect(1500);
         }
-
-        const shouldLaunchChase =
-          activeSquadId === 'chickens' && raccoonPhase === 'sneaking';
-        if (shouldLaunchChase) {
-          schedule(() => triggerRaccoonChase(), 420);
-        }
-
-        const advanceDelay = shouldLaunchChase
-          ? 3850
-          : raccoonPhase === 'chasing'
-            ? 2400
-            : 1450;
-
-        schedule(() => {
-          const nextIdx = questionIndex + 1;
-          if (nextIdx >= problems.length) {
-            setScreen('win');
-            soundEngine.setPartyBoost(true);
-            soundEngine.playWinFanfare();
-            soundEngine.speak('You win!! Every single squad is cheering for you!!');
-          } else {
-            setQuestionIndex(nextIdx);
-            prepareQuestion(nextIdx);
-          }
-        }, advanceDelay);
         return;
       }
 
-      // Wrong answer: warm supportive encouragement + progressive visual hint
+      // Wrong answer: warm supportive encouragement + voice-guided counting hint
       setAnswerState('wrong');
       setReaction('encourage');
       setAttemptsOnCurrent((a) => a + 1);
@@ -190,14 +268,21 @@ export function useMathGame() {
         );
       }
 
-      setHintLevel((prev) => (prev === 0 ? 1 : 2));
+      const nextHint: 1 | 2 = hintLevel === 0 ? 1 : 2;
+      setHintLevel(nextHint);
+      if (nextHint === 2) {
+        setWalkthroughTrigger((n) => n + 1);
+      }
+
       const encLine = pickRandomLine(
         activeSquad.encourageLines,
         attemptsOnCurrent + questionIndex
       );
       setSpeechText(encLine);
       soundEngine.playWrong();
-      soundEngine.speak(`${encLine} ${currentProblem.hint.step1Text}`);
+      if (nextHint === 1) {
+        soundEngine.speak(currentProblem.hint.step1Spoken, { rate: 0.9 });
+      }
 
       schedule(() => {
         setAnswerState('idle');
@@ -207,15 +292,15 @@ export function useMathGame() {
     [
       activeSquad,
       activeSquadId,
+      advanceAfterCorrect,
       answerState,
       attemptsOnCurrent,
       currentProblem,
-      prepareQuestion,
-      problems.length,
+      gagState.kind,
+      hintLevel,
       questionIndex,
-      raccoonPhase,
       schedule,
-      triggerRaccoonChase,
+      triggerStageGag,
     ]
   );
 
@@ -255,11 +340,49 @@ export function useMathGame() {
 
   const handleRequestHint = useCallback(() => {
     if (!currentProblem) return;
+    soundEngine.unlock();
     soundEngine.playTap();
-    setHintLevel((prev) => (prev === 0 ? 1 : 2));
+    const nextHint: 1 | 2 = hintLevel === 0 ? 1 : 2;
+    setHintLevel(nextHint);
     setReaction('encourage');
-    setSpeechText(currentProblem.hint.strategyTitle);
-    soundEngine.speak(currentProblem.hint.step1Text);
+    setSpeechText('Let’s count together!');
+    if (nextHint === 1) {
+      soundEngine.speak(currentProblem.hint.step1Spoken, { rate: 0.9 });
+    } else {
+      setWalkthroughTrigger((n) => n + 1);
+    }
+  }, [currentProblem, hintLevel]);
+
+  const handleNewProblem = useCallback(() => {
+    if (!currentProblem || answerState === 'correct') return;
+    soundEngine.unlock();
+    soundEngine.stopSpeech();
+    soundEngine.playTap();
+
+    const exclude = new Set(problems.map((p) => p.key));
+    const replacement = generateReplacementProblem(
+      level,
+      opMode,
+      exclude,
+      currentProblem.inputMode
+    );
+
+    setProblems((prev) => prev.map((p, idx) => (idx === questionIndex ? replacement : p)));
+    setTypedValue('');
+    setAnswerState('idle');
+    setReaction('idle');
+    setHintLevel(0);
+    setEliminatedChoices([]);
+    setAttemptsOnCurrent(0);
+    setSpeechText('Fresh problem! You got this!');
+    soundEngine.speak(`Here is a fresh one! ${replacement.hint.equationSpoken}`);
+  }, [answerState, currentProblem, level, opMode, problems, questionIndex]);
+
+  const handleReadEquation = useCallback(() => {
+    if (!currentProblem) return;
+    soundEngine.unlock();
+    soundEngine.playTap();
+    soundEngine.speak(currentProblem.hint.equationSpoken, { rate: 0.9 });
   }, [currentProblem]);
 
   // Desktop keyboard convenience alongside iPad touch keypad
@@ -318,6 +441,7 @@ export function useMathGame() {
     level,
     musicOn,
     voiceOn,
+    squadOrder,
     questionIndex,
     activeSquadId,
     activeSquad,
@@ -327,17 +451,20 @@ export function useMathGame() {
     reaction,
     speechText,
     hintLevel,
+    walkthroughTrigger,
     eliminatedChoices,
     firstTryCount,
     squadToast,
-    raccoonPhase,
+    gagState,
     startNewGame,
-    triggerRaccoonChase,
+    triggerStageGag,
     handleDigit,
     handleBackspace,
     handleCalcSubmit,
     handleSelectChoice,
     handleRequestHint,
+    handleNewProblem,
+    handleReadEquation,
     toggleMusic,
     toggleVoice,
     goHome,

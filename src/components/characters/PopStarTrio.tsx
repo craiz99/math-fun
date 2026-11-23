@@ -253,3 +253,93 @@ export function MiraSvg({ reaction = 'idle', size = 136 }: CharProps) {
     </svg>
   );
 }
+
+/** Cartoon Gwi-Ma — blazing neon-pink & violet flame monster from K-Pop Demon Hunters! */
+export function GwiMaSvg({
+  blasted = false,
+  size = 190,
+}: {
+  blasted?: boolean;
+  size?: number;
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 190 185" fill="none" aria-label="Gwi-Ma">
+      <defs>
+        <radialGradient id="gwimaGlow" cx="50%" cy="55%" r="52%">
+          <stop offset="0%" stopColor="#ff2e93" />
+          <stop offset="55%" stopColor="#a21caf" />
+          <stop offset="100%" stopColor="#3b0764" />
+        </radialGradient>
+        <linearGradient id="gwimaFlame" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="#701a75" />
+          <stop offset="48%" stopColor="#ec4899" />
+          <stop offset="100%" stopColor="#fb7185" />
+        </linearGradient>
+      </defs>
+
+      {/* Blazing Outer Violet-Magenta Flame Aura */}
+      <path
+        className="gwima-flame-flicker"
+        d="M24 146 C10 112 22 72 48 56 C44 34 64 16 84 30 C96 8 122 10 124 34 C146 24 166 44 156 68 C178 84 180 122 162 148 C144 172 46 174 24 146 Z"
+        fill="url(#gwimaFlame)"
+        stroke={INK}
+        strokeWidth="4.5"
+        strokeLinejoin="round"
+      />
+
+      {/* Inner Blazing Neon Core */}
+      <path
+        d="M42 144 C32 116 42 82 64 68 C74 44 114 42 126 68 C148 80 156 116 144 144 C128 164 60 166 42 144 Z"
+        fill="url(#gwimaGlow)"
+      />
+
+      {/* Smoky Indigo Brow Ridge */}
+      <path
+        d="M48 76 Q74 62 94 78 Q116 62 142 76"
+        stroke="#312e81"
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+
+      {/* Glowing Eyes — or Dizzy Swirls when blasted by Star Power! */}
+      {blasted ? (
+        <>
+          <circle cx="70" cy="88" r="15" fill="#ffffff" stroke={INK} strokeWidth="3.5" />
+          <path d="M62 88 A8 8 0 1 1 78 88 A5 5 0 1 1 68 88" stroke={INK} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <circle cx="120" cy="88" r="15" fill="#ffffff" stroke={INK} strokeWidth="3.5" />
+          <path d="M112 88 A8 8 0 1 1 128 88 A5 5 0 1 1 118 88" stroke={INK} strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          {/* Orbiting dizzy stars */}
+          <text x="48" y="34" fontSize="20">⭐</text>
+          <text x="122" y="34" fontSize="20">💫</text>
+        </>
+      ) : (
+        <>
+          <ellipse cx="70" cy="88" rx="14" ry="11" fill="#ff2e93" stroke={INK} strokeWidth="3" />
+          <ellipse cx="70" cy="88" rx="7" ry="6" fill="#fef08a" />
+          <ellipse cx="120" cy="88" rx="14" ry="11" fill="#ff2e93" stroke={INK} strokeWidth="3" />
+          <ellipse cx="120" cy="88" rx="7" ry="6" fill="#fef08a" />
+        </>
+      )}
+
+      {/* Jagged Blazing Wide Mouth */}
+      {blasted ? (
+        <path
+          d="M64 134 Q95 112 126 134 Q114 148 95 144 Q76 148 64 134 Z"
+          fill="#4a044e"
+          stroke={INK}
+          strokeWidth="3.8"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="M46 122 L62 114 L74 126 L88 112 L96 126 L108 112 L120 126 L132 114 L146 124 L132 146 L116 136 L102 150 L90 138 L76 150 L62 136 Z"
+          fill="#ff4da6"
+          stroke={INK}
+          strokeWidth="3.8"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+}
+
