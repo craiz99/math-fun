@@ -40,31 +40,34 @@ export function SquadStage({
   const actorClass = (key: string, delayClass = '') =>
     `char-actor state-${reaction} ${delayClass} ${pokedId === key ? 'poked' : ''}`;
 
-  // Fierce Hero Chickens actively chasing the panicked Raccoon across the stage!
+  // Fierce Hero Chickens aggressively chasing the panicked Raccoon across the stage!
   if (squadId === 'chickens' && raccoonPhase === 'chasing') {
     return (
       <div className="raccoon-chase-arena" aria-live="polite">
         <div className="chase-runner-track">
           <div className="chase-group">
-            <span className="dust-puff" style={{ left: '-28px' }}>💨</span>
-            <span className="dust-puff" style={{ left: '54px', animationDelay: '0.15s' }}>🪶</span>
+            <span className="dust-puff" style={{ left: '-34px' }}>💨</span>
+            <span className="dust-puff" style={{ left: '68px', animationDelay: '0.15s' }}>🪶</span>
             <div className="chase-chicken-angry" style={{ position: 'relative' }}>
-              <span className="comic-burst" style={{ top: '-26px', left: '-12px' }}>
+              <span className="comic-burst" style={{ top: '-22px', left: '-10px' }}>
                 BAWK!!
               </span>
-              <HeroChickenSvg battleMode size={172} />
+              <HeroChickenSvg battleMode size={228} />
             </div>
             <div className="chase-chicken-angry" style={{ position: 'relative', animationDelay: '0.1s' }}>
-              <span className="comic-burst" style={{ top: '-32px', left: '12px', background: '#f59e0b', color: '#281a38' }}>
+              <span
+                className="comic-burst"
+                style={{ top: '-28px', left: '8px', background: '#f59e0b', color: '#281a38' }}
+              >
                 PECK ATTACK!
               </span>
-              <GoldenHenSvg battleMode size={158} />
+              <GoldenHenSvg battleMode size={210} />
             </div>
-            <div className="chase-raccoon-panic" style={{ position: 'relative', marginLeft: '10px' }}>
-              <span className="comic-burst" style={{ top: '-22px', right: '-10px', background: '#ef4444' }}>
+            <div className="chase-raccoon-panic" style={{ position: 'relative', marginLeft: '6px' }}>
+              <span className="comic-burst" style={{ top: '-18px', right: '-8px', background: '#ef4444' }}>
                 SHOO!!
               </span>
-              <RaccoonSvg panicked size={146} />
+              <RaccoonSvg panicked size={196} />
             </div>
           </div>
         </div>
@@ -96,7 +99,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Giant Panda"
           >
-            <GiantPandaSvg reaction={reaction} size={176} />
+            <GiantPandaSvg reaction={reaction} size={254} />
           </div>
           <div
             className={actorClass('red-panda', 'delay-1')}
@@ -104,7 +107,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Red Panda"
           >
-            <RedPandaSvg reaction={reaction} size={170} />
+            <RedPandaSvg reaction={reaction} size={242} />
           </div>
         </>
       )}
@@ -121,7 +124,7 @@ export function SquadStage({
               reaction={reaction}
               battleMode={raccoonPhase === 'sneaking'}
               flexing={raccoonPhase === 'victory' || reaction === 'happy'}
-              size={172}
+              size={246}
             />
           </div>
           <div
@@ -133,7 +136,7 @@ export function SquadStage({
             <GoldenHenSvg
               reaction={reaction}
               battleMode={raccoonPhase === 'sneaking'}
-              size={158}
+              size={228}
             />
           </div>
 
@@ -148,16 +151,16 @@ export function SquadStage({
               <span
                 className="comic-burst"
                 style={{
-                  top: '-24px',
-                  left: '-14px',
-                  fontSize: '15px',
+                  top: '-22px',
+                  left: '-18px',
+                  fontSize: '18px',
                   background: '#fde047',
                   color: '#281a38',
                 }}
               >
                 TAP TO CHASE! 🦝
               </span>
-              <RaccoonSvg size={130} />
+              <RaccoonSvg size={186} />
             </div>
           )}
         </>
@@ -171,7 +174,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap JJ"
           >
-            <JJSvg reaction={reaction} size={174} />
+            <JJSvg reaction={reaction} size={252} />
           </div>
           <div
             className={actorClass('mikey', 'delay-1')}
@@ -179,7 +182,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Mikey"
           >
-            <MikeySvg reaction={reaction} size={166} />
+            <MikeySvg reaction={reaction} size={238} />
           </div>
         </>
       )}
@@ -192,7 +195,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Rumi"
           >
-            <RumiSvg reaction={reaction} size={162} />
+            <RumiSvg reaction={reaction} size={216} />
           </div>
           <div
             className={actorClass('zoey', 'delay-1')}
@@ -200,7 +203,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Zoey"
           >
-            <ZoeySvg reaction={reaction} size={156} />
+            <ZoeySvg reaction={reaction} size={206} />
           </div>
           <div
             className={actorClass('mira', 'delay-2')}
@@ -208,7 +211,7 @@ export function SquadStage({
             role="button"
             aria-label="Tap Mira"
           >
-            <MiraSvg reaction={reaction} size={162} />
+            <MiraSvg reaction={reaction} size={216} />
           </div>
         </>
       )}

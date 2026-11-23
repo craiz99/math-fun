@@ -30,62 +30,67 @@ export function HomeScreen({
 }: HomeScreenProps) {
   return (
     <main className="home-screen">
-      <div className="home-top-bar">
-        <button
-          id="home-music-toggle"
-          type="button"
-          className={`jelly-btn icon-btn ${musicOn ? 'jelly-pink' : 'jelly-slate'}`}
-          onClick={onToggleMusic}
-          aria-label={musicOn ? 'Turn music off' : 'Turn music on'}
-        >
-          {musicOn ? '🎵' : '🔇'}
-        </button>
-        <button
-          id="home-voice-toggle"
-          type="button"
-          className={`jelly-btn icon-btn ${voiceOn ? 'jelly-blue' : 'jelly-slate'}`}
-          onClick={onToggleVoice}
-          aria-label={voiceOn ? 'Turn voice off' : 'Turn voice on'}
-        >
-          {voiceOn ? '🗣️' : '🤫'}
-        </button>
+      <div className="home-header-bar">
+        <div className="home-title-spacer" aria-hidden="true" />
+        <RainbowTitle text="MATH PARTY!" />
+        <div className="home-audio-controls">
+          <button
+            id="home-music-toggle"
+            type="button"
+            className={`jelly-btn icon-btn icon-btn-lg ${musicOn ? 'jelly-pink' : 'jelly-slate'}`}
+            onClick={onToggleMusic}
+            aria-label={musicOn ? 'Turn music off' : 'Turn music on'}
+          >
+            {musicOn ? '🎵' : '🔇'}
+          </button>
+          <button
+            id="home-voice-toggle"
+            type="button"
+            className={`jelly-btn icon-btn icon-btn-lg ${voiceOn ? 'jelly-blue' : 'jelly-slate'}`}
+            onClick={onToggleVoice}
+            aria-label={voiceOn ? 'Turn voice off' : 'Turn voice on'}
+          >
+            {voiceOn ? '🗣️' : '🤫'}
+          </button>
+        </div>
       </div>
 
-      <RainbowTitle text="MATH PARTY!" />
-
-      {/* Full Cartoon Cast Waving Together */}
-      <div className="home-cast-row" aria-label="Math Party cartoon friends">
-        <div className="char-actor state-idle">
-          <JJSvg size={102} />
+      {/* HUGE 2-Tier Staggered Cartoon Cast Poster */}
+      <div className="cast-poster home-cast-poster" aria-label="Math Party cartoon friends">
+        <div className="cast-row-back">
+          <div className="char-actor state-idle">
+            <GiantPandaSvg size={166} />
+          </div>
+          <div className="char-actor state-idle delay-1">
+            <HeroChickenSvg flexing size={164} />
+          </div>
+          <div className="char-actor state-idle delay-2">
+            <JJSvg size={164} />
+          </div>
+          <div className="char-actor state-idle">
+            <ZoeySvg size={156} />
+          </div>
         </div>
-        <div className="char-actor state-idle delay-1">
-          <MikeySvg size={98} />
-        </div>
-        <div className="char-actor state-idle delay-2">
-          <RedPandaSvg size={100} />
-        </div>
-        <div className="char-actor state-idle">
-          <GiantPandaSvg size={104} />
-        </div>
-        <div className="char-actor state-idle delay-1">
-          <HeroChickenSvg flexing size={102} />
-        </div>
-        <div className="char-actor state-idle delay-2">
-          <GoldenHenSvg size={94} />
-        </div>
-        <div className="char-actor state-idle">
-          <RumiSvg size={98} />
-        </div>
-        <div className="char-actor state-idle delay-1">
-          <ZoeySvg size={94} />
-        </div>
-        <div className="char-actor state-idle delay-2">
-          <MiraSvg size={98} />
+        <div className="cast-row-front">
+          <div className="char-actor state-idle delay-1">
+            <RedPandaSvg size={160} />
+          </div>
+          <div className="char-actor state-idle delay-2">
+            <GoldenHenSvg size={150} />
+          </div>
+          <div className="char-actor state-idle">
+            <MikeySvg size={158} />
+          </div>
+          <div className="char-actor state-idle delay-1">
+            <RumiSvg size={160} />
+          </div>
+          <div className="char-actor state-idle delay-2">
+            <MiraSvg size={160} />
+          </div>
         </div>
       </div>
 
       <section className="home-controls-card" aria-label="Game options">
-        {/* Operation Selector */}
         <div className="selector-row" role="group" aria-label="Choose math operation">
           <button
             id="mode-add"
@@ -113,8 +118,7 @@ export function HomeScreen({
           </button>
         </div>
 
-        {/* Difficulty Tier Selector */}
-        <div className="selector-row" role="group" aria-label="Choose number level">
+        <div className="selector-row" role="group" aria-label="Choose number level and start">
           <button
             id="level-1"
             type="button"
@@ -139,16 +143,15 @@ export function HomeScreen({
           >
             🚀 Up to 50
           </button>
+          <button
+            id="btn-start-game"
+            type="button"
+            className="jelly-btn jelly-green play-cta-btn"
+            onClick={onStartGame}
+          >
+            ▶ PLAY!
+          </button>
         </div>
-
-        <button
-          id="btn-start-game"
-          type="button"
-          className="jelly-btn jelly-green play-cta-btn"
-          onClick={onStartGame}
-        >
-          ▶ PLAY!
-        </button>
       </section>
     </main>
   );
