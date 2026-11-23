@@ -94,8 +94,7 @@ export function App() {
       {game.screen === 'win' && (
         <WinCelebration
           firstTryCount={game.firstTryCount}
-          onPlayAgain={() => game.startNewGame(game.level, game.opMode)}
-          onGoHome={game.goHome}
+          onPlayAgain={game.goHome}
         />
       )}
     </div>
