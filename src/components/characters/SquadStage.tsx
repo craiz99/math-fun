@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import type { ReactionState, SquadId, StageGagState } from '../../game/types';
-import { soundEngine } from '../../audio/soundEngine';
 import { BambooTowerSvg, GiantPandaSvg, RedPandaSvg } from './PandaSquad';
 import { GoldenHenSvg, HeroChickenSvg, RaccoonSvg } from './ChickenCrew';
 import { JJSvg, MikeySvg } from './JJAndMikey';
 import { GwiMaSvg, MiraSvg, RumiSvg, ZoeySvg } from './PopStarTrio';
+import { InteractiveCharacter } from './InteractiveCharacter';
 
 interface SquadStageProps {
   squadId: SquadId;
@@ -21,20 +20,6 @@ export function SquadStage({
   gagState,
   onTriggerGag,
 }: SquadStageProps) {
-  const [pokedId, setPokedId] = useState<string | null>(null);
-
-  const handlePoke = (charKey: string, isChicken = false) => {
-    setPokedId(charKey);
-    if (isChicken) soundEngine.playChickenBawk();
-    else soundEngine.playTap();
-    window.setTimeout(() => {
-      setPokedId((curr) => (curr === charKey ? null : curr));
-    }, 480);
-  };
-
-  const actorClass = (key: string, delayClass = '', overrideState?: ReactionState) =>
-    `char-actor state-${overrideState ?? reaction} ${delayClass} ${pokedId === key ? 'poked' : ''}`;
-
   // 1) HERO CHICKENS VS. RACCOON CHASE!
   if (squadId === 'chickens' && gagState.kind === 'raccoon-chasing') {
     return (
@@ -86,15 +71,23 @@ export function SquadStage({
         <div className="rainbow-laser-beam beam-2" aria-hidden="true" />
 
         <div className="gwima-heroes-cluster">
-          <div className="char-actor state-happy">
-            <RumiSvg reaction="happy" size={184} />
-          </div>
-          <div className="char-actor state-happy delay-1">
-            <ZoeySvg reaction="happy" size={176} />
-          </div>
-          <div className="char-actor state-happy delay-2">
-            <MiraSvg reaction="happy" size={184} />
-          </div>
+          <InteractiveCharacter
+            characterId="rumi"
+            reaction="happy"
+            renderCharacter={(r) => <RumiSvg reaction={r} size={184} />}
+          />
+          <InteractiveCharacter
+            characterId="zoey"
+            reaction="happy"
+            delayClass="delay-1"
+            renderCharacter={(r) => <ZoeySvg reaction={r} size={176} />}
+          />
+          <InteractiveCharacter
+            characterId="mira"
+            reaction="happy"
+            delayClass="delay-2"
+            renderCharacter={(r) => <MiraSvg reaction={r} size={184} />}
+          />
         </div>
 
         <div className="gwima-boss-blasted">
@@ -135,9 +128,11 @@ export function SquadStage({
           >
             NOM NOM NOM!!
           </span>
-          <div className="char-actor state-happy">
-            <GiantPandaSvg reaction="happy" size={236} />
-          </div>
+          <InteractiveCharacter
+            characterId="giant-panda"
+            reaction="happy"
+            renderCharacter={(r) => <GiantPandaSvg reaction={r} size={236} />}
+          />
         </div>
 
         <div style={{ position: 'relative' }}>
@@ -154,9 +149,12 @@ export function SquadStage({
           >
             BIG &amp; SCARY! RAWR!!
           </span>
-          <div className="char-actor state-celebrate red-panda-tall">
-            <RedPandaSvg reaction="happy" size={232} />
-          </div>
+          <InteractiveCharacter
+            characterId="red-panda"
+            reaction="celebrate"
+            className="red-panda-tall"
+            renderCharacter={(r) => <RedPandaSvg reaction={r} size={232} />}
+          />
         </div>
       </div>
     );
@@ -167,10 +165,7 @@ export function SquadStage({
     const jjSteppedIn = gagState.kind === 'jj-corrects';
     return (
       <div className="squad-stage" aria-live="polite">
-        <div
-          className={`char-actor ${jjSteppedIn ? 'state-happy jj-step-in' : 'state-encourage'}`}
-          style={{ position: 'relative' }}
-        >
+        <div style={{ position: 'relative' }}>
           {jjSteppedIn && (
             <span
               className="comic-burst"
@@ -186,13 +181,15 @@ export function SquadStage({
               MIKEY!! That&apos;s RIGHT!!
             </span>
           )}
-          <JJSvg reaction={jjSteppedIn ? 'happy' : 'encourage'} size={244} />
+          <InteractiveCharacter
+            characterId="jj"
+            reaction={jjSteppedIn ? 'happy' : 'encourage'}
+            className={jjSteppedIn ? 'jj-step-in' : ''}
+            renderCharacter={(r) => <JJSvg reaction={r} size={244} />}
+          />
         </div>
 
-        <div
-          className={`char-actor ${jjSteppedIn ? 'state-celebrate' : 'state-happy mikey-prank-hop'}`}
-          style={{ position: 'relative' }}
-        >
+        <div style={{ position: 'relative' }}>
           <span
             className="comic-burst"
             style={{
@@ -206,7 +203,12 @@ export function SquadStage({
           >
             {jjSteppedIn ? 'HEHE! JUST KIDDING!!' : 'WRONG!! HEHEHE!!'}
           </span>
-          <MikeySvg reaction="happy" size={236} />
+          <InteractiveCharacter
+            characterId="mikey"
+            reaction={jjSteppedIn ? 'celebrate' : 'happy'}
+            className={jjSteppedIn ? '' : 'mikey-prank-hop'}
+            renderCharacter={(r) => <MikeySvg reaction={r} size={236} />}
+          />
         </div>
       </div>
     );
@@ -230,20 +232,28 @@ export function SquadStage({
 
       {squadId === 'pandas' && (
         <>
-          <div
-            className={actorClass('giant-panda')}
-            onClick={() => handlePoke('giant-panda')}
-            role="button"
-            aria-label="Tap Giant Panda"
-          >
-            <GiantPandaSvg reaction={reaction} size={246} />
-          </div>
+          <InteractiveCharacter
+            characterId="giant-panda"
+            reaction={reaction}
+            renderCharacter={(r) => <GiantPandaSvg reaction={r} size={246} />}
+          />
 
           {gagState.kind === 'panda-tower' && (
             <div
               className="gag-clickable-prop"
-              onClick={onTriggerGag}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTriggerGag();
+              }}
               role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onTriggerGag();
+                }
+              }}
               aria-label="Tap wobbly bamboo tower"
               title="Tap the bamboo tower!"
             >
@@ -257,50 +267,58 @@ export function SquadStage({
             </div>
           )}
 
-          <div
-            className={actorClass('red-panda', 'delay-1')}
-            onClick={() => handlePoke('red-panda')}
-            role="button"
-            aria-label="Tap Red Panda"
-          >
-            <RedPandaSvg reaction={reaction} size={234} />
-          </div>
+          <InteractiveCharacter
+            characterId="red-panda"
+            reaction={reaction}
+            delayClass="delay-1"
+            renderCharacter={(r) => <RedPandaSvg reaction={r} size={234} />}
+          />
         </>
       )}
 
       {squadId === 'chickens' && (
         <>
-          <div
-            className={actorClass('hero-chicken')}
-            onClick={() => handlePoke('hero-chicken', true)}
-            role="button"
-            aria-label="Tap Hero White Chicken"
-          >
-            <HeroChickenSvg
-              reaction={reaction}
-              battleMode={gagState.kind === 'raccoon-sneaking'}
-              flexing={gagState.kind === 'raccoon-victory' || reaction === 'happy'}
-              size={242}
-            />
-          </div>
-          <div
-            className={actorClass('golden-hen', 'delay-1')}
-            onClick={() => handlePoke('golden-hen', true)}
-            role="button"
-            aria-label="Tap Golden Hen"
-          >
-            <GoldenHenSvg
-              reaction={reaction}
-              battleMode={gagState.kind === 'raccoon-sneaking'}
-              size={224}
-            />
-          </div>
+          <InteractiveCharacter
+            characterId="hero-chicken"
+            reaction={reaction}
+            renderCharacter={(r, poked) => (
+              <HeroChickenSvg
+                reaction={r}
+                battleMode={gagState.kind === 'raccoon-sneaking'}
+                flexing={gagState.kind === 'raccoon-victory' || r === 'happy' || poked}
+                size={242}
+              />
+            )}
+          />
+          <InteractiveCharacter
+            characterId="golden-hen"
+            reaction={reaction}
+            delayClass="delay-1"
+            renderCharacter={(r) => (
+              <GoldenHenSvg
+                reaction={r}
+                battleMode={gagState.kind === 'raccoon-sneaking'}
+                size={224}
+              />
+            )}
+          />
 
           {gagState.kind === 'raccoon-sneaking' && (
             <div
               className="raccoon-sneaker"
-              onClick={onTriggerGag}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTriggerGag();
+              }}
               role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onTriggerGag();
+                }
+              }}
               aria-label="Tap sneaky raccoon to make the chickens chase him!"
               title="Tap to chase away the sneaky raccoon!"
             >
@@ -324,57 +342,62 @@ export function SquadStage({
 
       {squadId === 'jjmikey' && (
         <>
-          <div
-            className={actorClass('jj')}
-            onClick={() => handlePoke('jj')}
-            role="button"
-            aria-label="Tap JJ"
-          >
-            <JJSvg reaction={reaction} size={248} />
-          </div>
-          <div
-            className={actorClass('mikey', 'delay-1')}
-            onClick={() => handlePoke('mikey')}
-            role="button"
-            aria-label="Tap Mikey"
-          >
-            <MikeySvg reaction={reaction} size={236} />
-          </div>
+          <InteractiveCharacter
+            characterId="jj"
+            reaction={reaction}
+            renderCharacter={(r) => <JJSvg reaction={r} size={248} />}
+          />
+          <InteractiveCharacter
+            characterId="mikey"
+            reaction={reaction}
+            delayClass="delay-1"
+            renderCharacter={(r) => <MikeySvg reaction={r} size={236} />}
+          />
         </>
       )}
 
       {squadId === 'popstars' && (
         <>
-          <div
-            className={actorClass('rumi')}
-            onClick={() => handlePoke('rumi')}
-            role="button"
-            aria-label="Tap Rumi"
-          >
-            <RumiSvg reaction={reaction} size={gagState.kind === 'gwima-arrives' ? 182 : 214} />
-          </div>
-          <div
-            className={actorClass('zoey', 'delay-1')}
-            onClick={() => handlePoke('zoey')}
-            role="button"
-            aria-label="Tap Zoey"
-          >
-            <ZoeySvg reaction={reaction} size={gagState.kind === 'gwima-arrives' ? 174 : 204} />
-          </div>
-          <div
-            className={actorClass('mira', 'delay-2')}
-            onClick={() => handlePoke('mira')}
-            role="button"
-            aria-label="Tap Mira"
-          >
-            <MiraSvg reaction={reaction} size={gagState.kind === 'gwima-arrives' ? 182 : 214} />
-          </div>
+          <InteractiveCharacter
+            characterId="rumi"
+            reaction={reaction}
+            renderCharacter={(r) => (
+              <RumiSvg reaction={r} size={gagState.kind === 'gwima-arrives' ? 182 : 214} />
+            )}
+          />
+          <InteractiveCharacter
+            characterId="zoey"
+            reaction={reaction}
+            delayClass="delay-1"
+            renderCharacter={(r) => (
+              <ZoeySvg reaction={r} size={gagState.kind === 'gwima-arrives' ? 174 : 204} />
+            )}
+          />
+          <InteractiveCharacter
+            characterId="mira"
+            reaction={reaction}
+            delayClass="delay-2"
+            renderCharacter={(r) => (
+              <MiraSvg reaction={r} size={gagState.kind === 'gwima-arrives' ? 182 : 214} />
+            )}
+          />
 
           {gagState.kind === 'gwima-arrives' && (
             <div
               className="gwima-sneaker"
-              onClick={onTriggerGag}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTriggerGag();
+              }}
               role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onTriggerGag();
+                }
+              }}
               aria-label="Tap Gwi-Ma to blast him with Star Power!"
               title="Tap to blast Gwi-Ma!"
             >

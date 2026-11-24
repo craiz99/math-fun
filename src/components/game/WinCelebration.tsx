@@ -3,6 +3,7 @@ import { GiantPandaSvg, RedPandaSvg } from '../characters/PandaSquad';
 import { GoldenHenSvg, HeroChickenSvg } from '../characters/ChickenCrew';
 import { JJSvg, MikeySvg } from '../characters/JJAndMikey';
 import { MiraSvg, RumiSvg, ZoeySvg } from '../characters/PopStarTrio';
+import { InteractiveCharacter } from '../characters/InteractiveCharacter';
 import { RainbowTitle } from './RainbowTitle';
 
 interface WinCelebrationProps {
@@ -61,35 +62,59 @@ export function WinCelebration({
       {/* HUGE 2-Tier Staggered All-Characters Victory Concert Stage! */}
       <div className="cast-poster win-cast-poster" aria-label="All cartoon characters celebrating">
         <div className="cast-row-back">
-          <div className="char-actor state-celebrate">
-            <GiantPandaSvg reaction="celebrate" size={172} />
-          </div>
-          <div className="char-actor state-celebrate delay-1">
-            <HeroChickenSvg reaction="celebrate" flexing size={170} />
-          </div>
-          <div className="char-actor state-celebrate delay-2">
-            <JJSvg reaction="celebrate" size={168} />
-          </div>
-          <div className="char-actor state-celebrate">
-            <ZoeySvg reaction="celebrate" size={160} />
-          </div>
+          <InteractiveCharacter
+            characterId="giant-panda"
+            reaction="celebrate"
+            renderCharacter={(r) => <GiantPandaSvg reaction={r} size={172} />}
+          />
+          <InteractiveCharacter
+            characterId="hero-chicken"
+            reaction="celebrate"
+            delayClass="delay-1"
+            renderCharacter={(r) => <HeroChickenSvg reaction={r} flexing size={170} />}
+          />
+          <InteractiveCharacter
+            characterId="jj"
+            reaction="celebrate"
+            delayClass="delay-2"
+            renderCharacter={(r) => <JJSvg reaction={r} size={168} />}
+          />
+          <InteractiveCharacter
+            characterId="zoey"
+            reaction="celebrate"
+            renderCharacter={(r) => <ZoeySvg reaction={r} size={160} />}
+          />
         </div>
         <div className="cast-row-front">
-          <div className="char-actor state-celebrate delay-1">
-            <RumiSvg reaction="celebrate" size={166} />
-          </div>
-          <div className="char-actor state-celebrate delay-2">
-            <RedPandaSvg reaction="celebrate" size={166} />
-          </div>
-          <div className="char-actor state-celebrate">
-            <GoldenHenSvg reaction="celebrate" size={156} />
-          </div>
-          <div className="char-actor state-celebrate delay-1">
-            <MikeySvg reaction="celebrate" size={162} />
-          </div>
-          <div className="char-actor state-celebrate delay-2">
-            <MiraSvg reaction="celebrate" size={166} />
-          </div>
+          <InteractiveCharacter
+            characterId="rumi"
+            reaction="celebrate"
+            delayClass="delay-1"
+            renderCharacter={(r) => <RumiSvg reaction={r} size={166} />}
+          />
+          <InteractiveCharacter
+            characterId="red-panda"
+            reaction="celebrate"
+            delayClass="delay-2"
+            renderCharacter={(r) => <RedPandaSvg reaction={r} size={166} />}
+          />
+          <InteractiveCharacter
+            characterId="golden-hen"
+            reaction="celebrate"
+            renderCharacter={(r) => <GoldenHenSvg reaction={r} size={156} />}
+          />
+          <InteractiveCharacter
+            characterId="mikey"
+            reaction="celebrate"
+            delayClass="delay-1"
+            renderCharacter={(r) => <MikeySvg reaction={r} size={162} />}
+          />
+          <InteractiveCharacter
+            characterId="mira"
+            reaction="celebrate"
+            delayClass="delay-2"
+            renderCharacter={(r) => <MiraSvg reaction={r} size={166} />}
+          />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { GiantPandaSvg, RedPandaSvg } from '../characters/PandaSquad';
 import { GoldenHenSvg, HeroChickenSvg } from '../characters/ChickenCrew';
 import { JJSvg, MikeySvg } from '../characters/JJAndMikey';
 import { MiraSvg, RumiSvg, ZoeySvg } from '../characters/PopStarTrio';
+import { InteractiveCharacter } from '../characters/InteractiveCharacter';
 import { RainbowTitle } from './RainbowTitle';
 
 interface HomeScreenProps {
@@ -58,35 +59,50 @@ export function HomeScreen({
       {/* HUGE 2-Tier Staggered Cartoon Cast Poster */}
       <div className="cast-poster home-cast-poster" aria-label="Math Party cartoon friends">
         <div className="cast-row-back">
-          <div className="char-actor state-idle">
-            <GiantPandaSvg size={166} />
-          </div>
-          <div className="char-actor state-idle delay-1">
-            <HeroChickenSvg flexing size={164} />
-          </div>
-          <div className="char-actor state-idle delay-2">
-            <JJSvg size={164} />
-          </div>
-          <div className="char-actor state-idle">
-            <ZoeySvg size={156} />
-          </div>
+          <InteractiveCharacter
+            characterId="giant-panda"
+            renderCharacter={(r) => <GiantPandaSvg reaction={r} size={166} />}
+          />
+          <InteractiveCharacter
+            characterId="hero-chicken"
+            delayClass="delay-1"
+            renderCharacter={(r) => <HeroChickenSvg reaction={r} flexing size={164} />}
+          />
+          <InteractiveCharacter
+            characterId="jj"
+            delayClass="delay-2"
+            renderCharacter={(r) => <JJSvg reaction={r} size={164} />}
+          />
+          <InteractiveCharacter
+            characterId="zoey"
+            renderCharacter={(r) => <ZoeySvg reaction={r} size={156} />}
+          />
         </div>
         <div className="cast-row-front">
-          <div className="char-actor state-idle delay-1">
-            <RedPandaSvg size={160} />
-          </div>
-          <div className="char-actor state-idle delay-2">
-            <GoldenHenSvg size={150} />
-          </div>
-          <div className="char-actor state-idle">
-            <MikeySvg size={158} />
-          </div>
-          <div className="char-actor state-idle delay-1">
-            <RumiSvg size={160} />
-          </div>
-          <div className="char-actor state-idle delay-2">
-            <MiraSvg size={160} />
-          </div>
+          <InteractiveCharacter
+            characterId="red-panda"
+            delayClass="delay-1"
+            renderCharacter={(r) => <RedPandaSvg reaction={r} size={160} />}
+          />
+          <InteractiveCharacter
+            characterId="golden-hen"
+            delayClass="delay-2"
+            renderCharacter={(r) => <GoldenHenSvg reaction={r} size={150} />}
+          />
+          <InteractiveCharacter
+            characterId="mikey"
+            renderCharacter={(r) => <MikeySvg reaction={r} size={158} />}
+          />
+          <InteractiveCharacter
+            characterId="rumi"
+            delayClass="delay-1"
+            renderCharacter={(r) => <RumiSvg reaction={r} size={160} />}
+          />
+          <InteractiveCharacter
+            characterId="mira"
+            delayClass="delay-2"
+            renderCharacter={(r) => <MiraSvg reaction={r} size={160} />}
+          />
         </div>
       </div>
 

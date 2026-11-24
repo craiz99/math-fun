@@ -385,6 +385,251 @@ class SoundEngine {
     }
   }
 
+  private playNoiseBurst(
+    ctx: AudioContext,
+    duration: number,
+    filterFreq: number,
+    volume: number,
+    startOffset = 0,
+    filterType: BiquadFilterType = 'bandpass'
+  ): void {
+    const now = ctx.currentTime + startOffset;
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const env = Math.sin((i / bufferSize) * Math.PI);
+      data[i] = (Math.random() * 2 - 1) * env;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(filterFreq, now);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(now);
+  }
+
+  /** Giant Panda happy bamboo chomp + cozy marimba boop! */
+  public playPandaMunch(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 290, 0.09, 'sine', 0.15, 0, 195);
+    this.playTone(ctx, 350, 0.09, 'sine', 0.14, 0.11, 230);
+    this.playTone(ctx, 523.25, 0.14, 'triangle', 0.12, 0.21, 659.25);
+  }
+
+  /** Red Panda playful tiny "rawr!" squeak-boing! */
+  public playRedPandaSqueak(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 420, 0.11, 'triangle', 0.14, 0, 860);
+    this.playTone(ctx, 760, 0.12, 'sine', 0.13, 0.09, 540);
+  }
+
+  /** Golden Hen bright cluck + golden shimmer chime! */
+  public playGoldenCluck(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 780, 0.075, 'sawtooth', 0.075, 0, 1140);
+    this.playTone(ctx, 980, 0.085, 'sawtooth', 0.065, 0.085, 620);
+    this.playTone(ctx, 1318.5, 0.16, 'sine', 0.09, 0.15, 1568);
+  }
+
+  /** JJ upbeat heroic bounce arpeggio! */
+  public playHeroBoing(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 392, 0.11, 'triangle', 0.14, 0, 523.25);
+    this.playTone(ctx, 523.25, 0.12, 'triangle', 0.14, 0.08, 783.99);
+    this.playTone(ctx, 1046.5, 0.16, 'sine', 0.1, 0.16);
+  }
+
+  /** Mikey silly cartoon spring-boing! */
+  public playTurtleBoing(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 240, 0.14, 'sine', 0.16, 0, 620);
+    this.playTone(ctx, 560, 0.12, 'triangle', 0.12, 0.11, 310);
+    this.playTone(ctx, 330, 0.14, 'sine', 0.13, 0.2, 690);
+  }
+
+  /** Pop-Star Trio magical synth sparkle chord (3 voice variants for Rumi/Zoey/Mira)! */
+  public playPopSparkle(variant = 0): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const chords = [
+      [587.33, 739.99, 880, 1174.66],
+      [523.25, 659.25, 783.99, 1046.5],
+      [659.25, 830.61, 987.77, 1318.5],
+    ];
+    const notes = chords[Math.abs(variant) % chords.length];
+    notes.forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.18, 'triangle', 0.11, i * 0.045);
+      this.playTone(ctx, freq * 2, 0.12, 'sine', 0.045, i * 0.045 + 0.015);
+    });
+  }
+
+  /** Bubbly waterfall & pond splash! */
+  public playWaterSplash(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playNoiseBurst(ctx, 0.16, 1400, 0.075, 0, 'bandpass');
+    [420, 560, 740, 960].forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.08, 'sine', 0.11, 0.03 + i * 0.045, freq * 1.38);
+    });
+  }
+
+  /** Crisp hollow wooden marimba tap for bamboo stalks & blocky trees! */
+  public playWoodMarimba(pitchIndex = 0): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const scale = [392, 440, 523.25, 587.33, 659.25, 783.99];
+    const base = scale[Math.abs(pitchIndex) % scale.length];
+    this.playTone(ctx, base, 0.12, 'triangle', 0.15, 0);
+    this.playTone(ctx, base * 1.5, 0.09, 'sine', 0.09, 0.06);
+  }
+
+  /** Delicate fluttering harp trill for butterflies! */
+  public playFlutterChime(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const notes = [880, 1046.5, 1174.66, 1318.5, 1568];
+    notes.forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.11, 'sine', 0.085, i * 0.038);
+    });
+  }
+
+  /** Soft puffy boing for clouds! */
+  public playCloudPuff(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playNoiseBurst(ctx, 0.14, 900, 0.055, 0, 'lowpass');
+    this.playTone(ctx, 340, 0.15, 'sine', 0.12, 0.02, 520);
+  }
+
+  /** Warm sunny major chord shimmer for the cartoon sun! */
+  public playSunChime(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.28, 'sine', 0.09, i * 0.04);
+    });
+  }
+
+  /** Breezy windmill whoosh + cheerful whistle! */
+  public playWindWhoosh(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playNoiseBurst(ctx, 0.28, 1200, 0.08, 0, 'bandpass');
+    this.playTone(ctx, 360, 0.24, 'sine', 0.09, 0.02, 740);
+  }
+
+  /** Cute double plop-boing for shaking apples from the tree! */
+  public playApplePop(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 480, 0.09, 'sine', 0.13, 0, 290);
+    this.playTone(ctx, 560, 0.09, 'sine', 0.13, 0.1, 340);
+    this.playTone(ctx, 640, 0.11, 'triangle', 0.11, 0.2, 820);
+  }
+
+  /** Adorable short cartoon bumblebee buzz-zip! */
+  public playBeeBuzz(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 230, 0.14, 'sawtooth', 0.055, 0, 310);
+    this.playTone(ctx, 310, 0.14, 'sawtooth', 0.05, 0.12, 240);
+    this.playTone(ctx, 680, 0.09, 'sine', 0.08, 0.22, 920);
+  }
+
+  /** Cheerful xylophone pluck for flowers & floating musical notes! */
+  public playFlowerPluck(noteIndex = 0): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66];
+    const freq = scale[Math.abs(noteIndex) % scale.length];
+    this.playTone(ctx, freq, 0.17, 'triangle', 0.13, 0);
+    this.playTone(ctx, freq * 2, 0.11, 'sine', 0.05, 0.02);
+  }
+
+  /** Playful cartoon airplane zoom! */
+  public playPlaneZoom(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playNoiseBurst(ctx, 0.24, 1600, 0.06, 0, 'bandpass');
+    this.playTone(ctx, 320, 0.15, 'triangle', 0.11, 0, 760);
+    this.playTone(ctx, 760, 0.18, 'sine', 0.1, 0.14, 420);
+  }
+
+  /** Airy rubbery hot-air balloon bounce! */
+  public playBalloonBoing(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 260, 0.18, 'sine', 0.15, 0, 580);
+    this.playTone(ctx, 520, 0.12, 'triangle', 0.09, 0.14, 680);
+  }
+
+  /** Sparkling ascending rainbow pentatonic glissando! */
+  public playRainbowGliss(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const notes = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1318.5];
+    notes.forEach((freq, i) => {
+      this.playTone(ctx, freq, 0.18, 'sine', 0.09, i * 0.042);
+    });
+  }
+
+  /** Bright retro star-block coin ding! */
+  public playStarCoin(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 987.77, 0.09, 'triangle', 0.14, 0);
+    this.playTone(ctx, 1318.51, 0.24, 'triangle', 0.14, 0.08);
+    this.playTone(ctx, 1975.53, 0.14, 'sine', 0.05, 0.09);
+  }
+
+  /** Playable rainbow equalizer bar pop-synth note! */
+  public playEqualizerNote(barIndex: number): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const scale = [
+      261.63, 293.66, 329.63, 392.0, 440.0,
+      523.25, 587.33, 659.25, 783.99, 880.0,
+      1046.5, 1174.66, 1318.51, 1567.98,
+    ];
+    const freq = scale[Math.abs(barIndex) % scale.length];
+    this.playTone(ctx, freq, 0.2, 'triangle', 0.14, 0);
+    this.playTone(ctx, freq * 2, 0.12, 'sine', 0.055, 0.015);
+  }
+
+  /** Celebratory bokeh bubble pop! */
+  public playBubblePop(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 420, 0.08, 'sine', 0.14, 0, 1180);
+  }
+
+  /** Gentle pitch-varied sparkle chime when tapping open background sky/meadow/stage! */
+  public playSparklePop(xRatio = 0.5): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+    const clamped = Math.max(0, Math.min(0.999, xRatio));
+    const idx = Math.floor(clamped * scale.length);
+    const freq = scale[idx];
+    this.playTone(ctx, freq, 0.14, 'sine', 0.1, 0, freq * 1.12);
+    this.playTone(ctx, freq * 1.5, 0.11, 'triangle', 0.05, 0.03);
+  }
+
   public stopSpeech(): void {
     this.setMusicDucked(false);
     this.activeUtterance = null;
