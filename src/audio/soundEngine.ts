@@ -328,6 +328,16 @@ class SoundEngine {
     this.playTone(ctx, 370, 0.32, 'sawtooth', 0.08, 0.4, 240);
   }
 
+  /** Cheeky seesaw boing-giggle for the "6 7" meme easter egg! */
+  public playSixSevenGiggle(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.playTone(ctx, 440, 0.12, 'triangle', 0.15, 0, 587.33);
+    this.playTone(ctx, 587.33, 0.14, 'triangle', 0.15, 0.13, 493.88);
+    this.playTone(ctx, 659.25, 0.08, 'sine', 0.11, 0.28, 783.99);
+    this.playTone(ctx, 783.99, 0.09, 'sine', 0.11, 0.37, 880);
+  }
+
   /** Fun dramatic synth rumble when cartoon Gwi-Ma appears on stage! */
   public playGwimaArrival(): void {
     const ctx = this.getContext();

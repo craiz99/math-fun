@@ -62,6 +62,7 @@ export function App() {
                 onRequestHint={game.handleRequestHint}
                 onNewProblem={game.handleNewProblem}
                 onReadEquation={game.handleReadEquation}
+                onSixSevenEasterEgg={game.handleHintSixSevenEasterEgg}
               />
 
               <SquadStage
@@ -69,6 +70,7 @@ export function App() {
                 reaction={game.reaction}
                 speechText={game.speechText}
                 gagState={game.gagState}
+                sixSevenJoke={game.sixSevenJoke}
                 onTriggerGag={game.triggerStageGag}
               />
             </div>

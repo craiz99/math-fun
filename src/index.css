@@ -432,6 +432,14 @@ button {
   animation: gentle-wobble 0.42s ease;
 }
 
+.answer-slot.joke {
+  border-style: solid;
+  border-color: #9333ea;
+  background: #f3e8ff;
+  color: #7e22ce;
+  animation: six-seven-wiggle 0.52s ease-in-out infinite;
+}
+
 /* Voice-Guided Interactive Counting Hint Box */
 .hint-panel {
   width: 100%;
@@ -496,7 +504,12 @@ button {
   justify-content: center;
   box-shadow: 0 5px 0 #15803d;
   text-shadow: 0 2px 0 rgba(40, 26, 56, 0.5);
+  cursor: pointer;
   transition: transform 0.18s ease;
+}
+
+.count-anchor-badge:active {
+  transform: scale(1.08);
 }
 
 .count-anchor-badge.pulsing {
@@ -694,6 +707,39 @@ button {
 
 .speech-bubble.encourage {
   background: #fde68a;
+}
+
+.speech-bubble.joke {
+  background: linear-gradient(135deg, #f5d0fe 0%, #fef08a 100%);
+  color: #581c87;
+}
+
+.six-seven-meme-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 14;
+}
+
+.six-seven-badge {
+  top: 56px;
+  font-size: 26px;
+  padding: 6px 14px;
+}
+
+.six-badge {
+  left: 8px;
+  background: #a855f7;
+  color: #fef08a;
+  animation: six-seven-left 0.6s ease-in-out infinite;
+}
+
+.seven-badge {
+  right: 8px;
+  background: #f59e0b;
+  color: #281a38;
+  text-shadow: none;
+  animation: six-seven-right 0.6s ease-in-out infinite;
 }
 
 .speech-bubble::after {
@@ -1789,6 +1835,21 @@ button {
 @keyframes note-float {
   0%, 100% { transform: translateY(0) rotate(-6deg); }
   50% { transform: translateY(-14px) rotate(8deg); }
+}
+
+@keyframes six-seven-wiggle {
+  0%, 100% { transform: rotate(-6deg) scale(1.06); }
+  50% { transform: rotate(6deg) scale(1.1); }
+}
+
+@keyframes six-seven-left {
+  0%, 100% { transform: translateY(-14px) rotate(-8deg) scale(1.06); }
+  50% { transform: translateY(14px) rotate(4deg) scale(0.96); }
+}
+
+@keyframes six-seven-right {
+  0%, 100% { transform: translateY(14px) rotate(8deg) scale(0.96); }
+  50% { transform: translateY(-14px) rotate(-4deg) scale(1.06); }
 }
 
 /* ============================================================

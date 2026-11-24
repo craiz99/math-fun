@@ -1,16 +1,17 @@
-import type { MathProblem, SquadConfig } from '../../game/types';
+import type { AnswerState, MathProblem, SquadConfig } from '../../game/types';
 import { HintVisual } from './HintVisual';
 
 interface MathCardProps {
   problem: MathProblem;
   squad: SquadConfig;
   typedValue: string;
-  answerState: 'idle' | 'correct' | 'wrong';
+  answerState: AnswerState;
   hintLevel: 0 | 1 | 2;
   walkthroughTrigger: number;
   onRequestHint: () => void;
   onNewProblem: () => void;
   onReadEquation: () => void;
+  onSixSevenEasterEgg: () => void;
 }
 
 export function MathCard({
@@ -23,6 +24,7 @@ export function MathCard({
   onRequestHint,
   onNewProblem,
   onReadEquation,
+  onSixSevenEasterEgg,
 }: MathCardProps) {
   const displayOp = problem.op === '-' ? '−' : '+';
   const displayAnswer =
@@ -37,6 +39,7 @@ export function MathCard({
     typedValue.length > 0 && answerState === 'idle' ? 'filled' : '',
     answerState === 'correct' ? 'correct' : '',
     answerState === 'wrong' ? 'wrong' : '',
+    answerState === 'joke' ? 'joke' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -96,6 +99,7 @@ export function MathCard({
           counterEmoji={squad.counterEmoji}
           hintLevel={hintLevel}
           walkthroughTrigger={walkthroughTrigger}
+          onSixSevenEasterEgg={onSixSevenEasterEgg}
         />
       )}
     </section>
