@@ -21,3 +21,13 @@ export function isSixSevenEasterEgg(
   }
   return input.trim() === SIX_SEVEN_TEXT;
 }
+
+/**
+ * Checks whether two consecutive clicks in the counting helper tapped 6 then 7.
+ */
+export function isSixSevenSequence(
+  previousValue: number | null,
+  currentValue: number
+): boolean {
+  return previousValue === 6 && currentValue === 7;
+}

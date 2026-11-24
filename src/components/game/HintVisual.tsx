@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MathProblem } from '../../game/types';
+import { isSixSevenSequence } from '../../game/easterEggs';
 import { soundEngine } from '../../audio/soundEngine';
 
 interface HintVisualProps {
@@ -7,6 +8,7 @@ interface HintVisualProps {
   counterEmoji: string;
   hintLevel: 1 | 2;
   walkthroughTrigger: number;
+  onSixSevenEasterEgg?: () => void;
 }
 
 /**
@@ -20,11 +22,13 @@ export function HintVisual({
   counterEmoji,
   hintLevel,
   walkthroughTrigger,
+  onSixSevenEasterEgg,
 }: HintVisualProps) {
   const { hint } = problem;
   const [revealedCount, setRevealedCount] = useState(0);
   const [activePulseIdx, setActivePulseIdx] = useState<number | null>(null);
   const timersRef = useRef<number[]>([]);
+  const lastTappedValueRef = useRef<number | null>(null);
 
   const clearWalkTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
@@ -35,6 +39,7 @@ export function HintVisual({
 
   const runGuidedWalkthrough = useCallback(() => {
     clearWalkTimers();
+    lastTappedValueRef.current = null;
     soundEngine.stopSpeech();
 
     const startId = window.setTimeout(() => {
@@ -79,16 +84,42 @@ export function HintVisual({
     }
   }, [hintLevel, walkthroughTrigger, runGuidedWalkthrough]);
 
+  const handleTapAnchor = () => {
+    clearWalkTimers();
+    setActivePulseIdx(-1);
+    const val = hint.startNumber;
+    const triggeredSixSeven = isSixSevenSequence(lastTappedValueRef.current, val);
+    lastTappedValueRef.current = val;
+
+    if (triggeredSixSeven && onSixSevenEasterEgg) {
+      onSixSevenEasterEgg();
+      return;
+    }
+
+    soundEngine.playTap();
+    soundEngine.speak(String(val), { rate: 0.92 });
+  };
+
   const handleTapStep = (idx: number) => {
     clearWalkTimers();
     const targetCount = Math.max(revealedCount, idx + 1);
     setRevealedCount(targetCount);
     setActivePulseIdx(idx);
+    const val = hint.stepValues[idx];
+    const triggeredSixSeven = isSixSevenSequence(lastTappedValueRef.current, val);
+    lastTappedValueRef.current = val;
+
+    if (triggeredSixSeven && onSixSevenEasterEgg) {
+      onSixSevenEasterEgg();
+      return;
+    }
+
     soundEngine.playCount(idx);
-    soundEngine.speak(String(hint.stepValues[idx]), { rate: 0.92 });
+    soundEngine.speak(String(val), { rate: 0.92 });
   };
 
   const handleHearAgain = () => {
+    lastTappedValueRef.current = null;
     if (hintLevel === 2) {
       runGuidedWalkthrough();
     } else {
@@ -119,12 +150,14 @@ export function HintVisual({
 
       <div className="counting-strip">
         {/* Giant Glowing Starting Number Anchor */}
-        <div
+        <button
+          type="button"
           className={`count-anchor-badge ${activePulseIdx === -1 ? 'pulsing' : ''}`}
+          onClick={handleTapAnchor}
           aria-label={`Start at ${hint.startNumber}`}
         >
           {hint.startNumber}
-        </div>
+        </button>
 
         <span className="count-op-sign" aria-hidden="true">
           {isAdd ? '+' : '−'}

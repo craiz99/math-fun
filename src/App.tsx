@@ -62,6 +62,7 @@ export function App() {
                 onRequestHint={game.handleRequestHint}
                 onNewProblem={game.handleNewProblem}
                 onReadEquation={game.handleReadEquation}
+                onSixSevenEasterEgg={game.handleHintSixSevenEasterEgg}
               />
 
               <SquadStage

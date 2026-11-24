@@ -148,28 +148,41 @@ export function useMathGame() {
     [clearJokeTimers, schedule, updateTypedValue]
   );
 
-  const triggerSixSevenEasterEgg = useCallback(() => {
-    clearJokeTimers();
-    setAnswerState('joke');
-    setSixSevenJoke(true);
-    setReaction('happy');
-    setSpeechText(SIX_SEVEN_SPEECH_BUBBLE);
-    soundEngine.playSixSevenGiggle();
-    soundEngine.speak(SIX_SEVEN_SPOKEN);
+  const triggerSixSevenEasterEgg = useCallback(
+    (options?: { animateSlot?: boolean }) => {
+      const animateSlot = options?.animateSlot ?? true;
+      clearJokeTimers();
+      if (animateSlot) {
+        setAnswerState('joke');
+      }
+      setSixSevenJoke(true);
+      setReaction('happy');
+      setSpeechText(SIX_SEVEN_SPEECH_BUBBLE);
+      soundEngine.playSixSevenGiggle();
+      soundEngine.speak(SIX_SEVEN_SPOKEN);
 
-    jokeInputTimerRef.current = window.setTimeout(() => {
-      jokeInputTimerRef.current = null;
-      updateTypedValue('');
-      setAnswerState((prev) => (prev === 'joke' ? 'idle' : prev));
-    }, 1400);
+      if (animateSlot) {
+        jokeInputTimerRef.current = window.setTimeout(() => {
+          jokeInputTimerRef.current = null;
+          updateTypedValue('');
+          setAnswerState((prev) => (prev === 'joke' ? 'idle' : prev));
+        }, 1400);
+      }
 
-    jokeEndTimerRef.current = window.setTimeout(() => {
-      jokeEndTimerRef.current = null;
-      setSixSevenJoke(false);
-      setReaction((prev) => (prev === 'happy' ? 'idle' : prev));
-      setSpeechText((prev) => (prev === SIX_SEVEN_SPEECH_BUBBLE ? null : prev));
-    }, 3200);
-  }, [clearJokeTimers, updateTypedValue]);
+      jokeEndTimerRef.current = window.setTimeout(() => {
+        jokeEndTimerRef.current = null;
+        setSixSevenJoke(false);
+        setReaction((prev) => (prev === 'happy' ? 'idle' : prev));
+        setSpeechText((prev) => (prev === SIX_SEVEN_SPEECH_BUBBLE ? null : prev));
+      }, 3200);
+    },
+    [clearJokeTimers, updateTypedValue]
+  );
+
+  const handleHintSixSevenEasterEgg = useCallback(() => {
+    if (answerState === 'correct') return;
+    triggerSixSevenEasterEgg({ animateSlot: false });
+  }, [answerState, triggerSixSevenEasterEgg]);
 
   const startNewGame = useCallback(
     (selectedLevel: DifficultyLevel = level, selectedOp: OperationMode = opMode) => {
@@ -580,6 +593,7 @@ export function useMathGame() {
     handleRequestHint,
     handleNewProblem,
     handleReadEquation,
+    handleHintSixSevenEasterEgg,
     toggleMusic,
     toggleVoice,
     goHome,

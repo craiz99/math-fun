@@ -3,6 +3,7 @@ import {
   SIX_SEVEN_SPEECH_BUBBLE,
   SIX_SEVEN_SPOKEN,
   isSixSevenEasterEgg,
+  isSixSevenSequence,
 } from './easterEggs';
 
 describe('6 7 meme easter egg', () => {
@@ -34,5 +35,14 @@ describe('6 7 meme easter egg', () => {
     expect(isSixSevenEasterEgg(problem, '7')).toBe(false);
     expect(isSixSevenEasterEgg(problem, '76')).toBe(false);
     expect(isSixSevenEasterEgg(problem, 10)).toBe(false);
+  });
+
+  it('triggers in the counting helper only when clicking 6 then 7 in sequence', () => {
+    expect(isSixSevenSequence(6, 7)).toBe(true);
+    expect(isSixSevenSequence(7, 6)).toBe(false);
+    expect(isSixSevenSequence(null, 7)).toBe(false);
+    expect(isSixSevenSequence(5, 7)).toBe(false);
+    expect(isSixSevenSequence(6, 6)).toBe(false);
+    expect(isSixSevenSequence(6, 8)).toBe(false);
   });
 });

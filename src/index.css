@@ -496,7 +496,12 @@ button {
   justify-content: center;
   box-shadow: 0 5px 0 #15803d;
   text-shadow: 0 2px 0 rgba(40, 26, 56, 0.5);
+  cursor: pointer;
   transition: transform 0.18s ease;
+}
+
+.count-anchor-badge:active {
+  transform: scale(1.08);
 }
 
 .count-anchor-badge.pulsing {
