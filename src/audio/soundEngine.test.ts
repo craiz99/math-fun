@@ -28,7 +28,7 @@ class MockBufferSource {
 
 class MockBiquadFilter {
   type: BiquadFilterType = 'lowpass';
-  frequency = { value: 0 };
+  frequency = { value: 0, setValueAtTime: vi.fn() };
   connect = vi.fn();
 }
 
@@ -226,11 +226,33 @@ describe('SoundEngine', () => {
       mod2.soundEngine.playGwimaBlast();
       mod2.soundEngine.playBambooRain();
       mod2.soundEngine.playWinFanfare();
+      mod2.soundEngine.playPandaMunch();
+      mod2.soundEngine.playRedPandaSqueak();
+      mod2.soundEngine.playGoldenCluck();
+      mod2.soundEngine.playHeroBoing();
+      mod2.soundEngine.playTurtleBoing();
+      mod2.soundEngine.playPopSparkle(0);
+      mod2.soundEngine.playWaterSplash();
+      mod2.soundEngine.playWoodMarimba(1);
+      mod2.soundEngine.playFlutterChime();
+      mod2.soundEngine.playCloudPuff();
+      mod2.soundEngine.playSunChime();
+      mod2.soundEngine.playWindWhoosh();
+      mod2.soundEngine.playApplePop();
+      mod2.soundEngine.playBeeBuzz();
+      mod2.soundEngine.playFlowerPluck(2);
+      mod2.soundEngine.playPlaneZoom();
+      mod2.soundEngine.playBalloonBoing();
+      mod2.soundEngine.playRainbowGliss();
+      mod2.soundEngine.playStarCoin();
+      mod2.soundEngine.playEqualizerNote(3);
+      mod2.soundEngine.playBubblePop();
+      mod2.soundEngine.playSparklePop(0.5);
       mod2.soundEngine.stopSpeech();
     }).not.toThrow();
   });
 
-  it('synthesizes every cartoon SFX method without error', async () => {
+  it('synthesizes every cartoon and interactive world SFX method without error', async () => {
     installBrowserMocks();
     const { soundEngine } = await import('./soundEngine');
 
@@ -248,8 +270,38 @@ describe('SoundEngine', () => {
     soundEngine.playBambooRain();
     soundEngine.playWinFanfare();
 
+    // Interactive character & world backdrop SFX
+    soundEngine.playPandaMunch();
+    soundEngine.playRedPandaSqueak();
+    soundEngine.playGoldenCluck();
+    soundEngine.playHeroBoing();
+    soundEngine.playTurtleBoing();
+    soundEngine.playPopSparkle(0);
+    soundEngine.playPopSparkle(1);
+    soundEngine.playPopSparkle(2);
+    soundEngine.playWaterSplash();
+    soundEngine.playWoodMarimba(0);
+    soundEngine.playWoodMarimba(-2);
+    soundEngine.playFlutterChime();
+    soundEngine.playCloudPuff();
+    soundEngine.playSunChime();
+    soundEngine.playWindWhoosh();
+    soundEngine.playApplePop();
+    soundEngine.playBeeBuzz();
+    soundEngine.playFlowerPluck(3);
+    soundEngine.playPlaneZoom();
+    soundEngine.playBalloonBoing();
+    soundEngine.playRainbowGliss();
+    soundEngine.playStarCoin();
+    soundEngine.playEqualizerNote(5);
+    soundEngine.playBubblePop();
+    soundEngine.playSparklePop(-0.2);
+    soundEngine.playSparklePop(0.5);
+    soundEngine.playSparklePop(1.5);
+
     expect(activeCtx).not.toBeNull();
-    expect(activeCtx!.oscillators.length).toBeGreaterThan(50);
+    expect(activeCtx!.oscillators.length).toBeGreaterThan(100);
+    expect(activeCtx!.bufferSources.length).toBeGreaterThanOrEqual(4);
   });
 
   it('selects voices via voiceschanged, ducks music during speech, and fires onEnd', async () => {
