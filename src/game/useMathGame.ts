@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
+  AnswerState,
   DifficultyLevel,
   MathProblem,
   OperationMode,
@@ -19,6 +20,11 @@ import {
   generateGameSession,
   generateReplacementProblem,
 } from './mathEngine';
+import {
+  SIX_SEVEN_SPEECH_BUBBLE,
+  SIX_SEVEN_SPOKEN,
+  isSixSevenEasterEgg,
+} from './easterEggs';
 import { soundEngine } from '../audio/soundEngine';
 
 export type ScreenMode = 'home' | 'play' | 'win';
@@ -36,7 +42,8 @@ export function useMathGame() {
   const [problems, setProblems] = useState<MathProblem[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [typedValue, setTypedValue] = useState('');
-  const [answerState, setAnswerState] = useState<'idle' | 'correct' | 'wrong'>('idle');
+  const typedValueRef = useRef('');
+  const [answerState, setAnswerState] = useState<AnswerState>('idle');
   const [reaction, setReaction] = useState<ReactionState>('idle');
   const [speechText, setSpeechText] = useState<string | null>(null);
   const [hintLevel, setHintLevel] = useState<0 | 1 | 2>(0);
@@ -46,13 +53,37 @@ export function useMathGame() {
   const [firstTryCount, setFirstTryCount] = useState(0);
   const [squadToast, setSquadToast] = useState<string | null>(null);
   const [gagState, setGagState] = useState<StageGagState>({ kind: 'none' });
+  const [sixSevenJoke, setSixSevenJoke] = useState(false);
 
   const timersRef = useRef<number[]>([]);
+  const jokeInputTimerRef = useRef<number | null>(null);
+  const jokeEndTimerRef = useRef<number | null>(null);
+
+  const updateTypedValue = useCallback((next: string) => {
+    typedValueRef.current = next;
+    setTypedValue(next);
+  }, []);
+
+  const clearJokeInputTimer = useCallback(() => {
+    if (jokeInputTimerRef.current !== null) {
+      window.clearTimeout(jokeInputTimerRef.current);
+      jokeInputTimerRef.current = null;
+    }
+  }, []);
+
+  const clearJokeTimers = useCallback(() => {
+    clearJokeInputTimer();
+    if (jokeEndTimerRef.current !== null) {
+      window.clearTimeout(jokeEndTimerRef.current);
+      jokeEndTimerRef.current = null;
+    }
+  }, [clearJokeInputTimer]);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
     timersRef.current = [];
-  }, []);
+    clearJokeTimers();
+  }, [clearJokeTimers]);
 
   const schedule = useCallback((fn: () => void, ms: number) => {
     const id = window.setTimeout(fn, ms);
@@ -71,13 +102,15 @@ export function useMathGame() {
 
   const prepareQuestion = useCallback(
     (nextIdx: number, order: SquadId[]) => {
-      setTypedValue('');
+      clearJokeTimers();
+      updateTypedValue('');
       setAnswerState('idle');
       setReaction('idle');
       setHintLevel(0);
       setEliminatedChoices([]);
       setAttemptsOnCurrent(0);
       setGagState({ kind: 'none' });
+      setSixSevenJoke(false);
 
       const nextSquadId =
         order[Math.min(order.length - 1, Math.floor(nextIdx / QUESTIONS_PER_SQUAD))];
@@ -112,8 +145,31 @@ export function useMathGame() {
         }, 900);
       }
     },
-    [schedule]
+    [clearJokeTimers, schedule, updateTypedValue]
   );
+
+  const triggerSixSevenEasterEgg = useCallback(() => {
+    clearJokeTimers();
+    setAnswerState('joke');
+    setSixSevenJoke(true);
+    setReaction('happy');
+    setSpeechText(SIX_SEVEN_SPEECH_BUBBLE);
+    soundEngine.playSixSevenGiggle();
+    soundEngine.speak(SIX_SEVEN_SPOKEN);
+
+    jokeInputTimerRef.current = window.setTimeout(() => {
+      jokeInputTimerRef.current = null;
+      updateTypedValue('');
+      setAnswerState((prev) => (prev === 'joke' ? 'idle' : prev));
+    }, 1400);
+
+    jokeEndTimerRef.current = window.setTimeout(() => {
+      jokeEndTimerRef.current = null;
+      setSixSevenJoke(false);
+      setReaction((prev) => (prev === 'happy' ? 'idle' : prev));
+      setSpeechText((prev) => (prev === SIX_SEVEN_SPEECH_BUBBLE ? null : prev));
+    }, 3200);
+  }, [clearJokeTimers, updateTypedValue]);
 
   const startNewGame = useCallback(
     (selectedLevel: DifficultyLevel = level, selectedOp: OperationMode = opMode) => {
@@ -141,6 +197,8 @@ export function useMathGame() {
 
   const triggerStageGag = useCallback(() => {
     if (gagState.kind === 'raccoon-sneaking') {
+      clearJokeTimers();
+      setSixSevenJoke(false);
       setGagState({ kind: 'raccoon-chasing' });
       setSpeechText(null);
       soundEngine.playRaccoonChase();
@@ -153,6 +211,8 @@ export function useMathGame() {
     }
 
     if (gagState.kind === 'gwima-arrives') {
+      clearJokeTimers();
+      setSixSevenJoke(false);
       setGagState({ kind: 'gwima-blasted' });
       setSpeechText(null);
       soundEngine.playGwimaBlast();
@@ -165,6 +225,8 @@ export function useMathGame() {
     }
 
     if (gagState.kind === 'panda-tower') {
+      clearJokeTimers();
+      setSixSevenJoke(false);
       setGagState({ kind: 'panda-rain' });
       setSpeechText(null);
       soundEngine.playBambooRain();
@@ -174,7 +236,7 @@ export function useMathGame() {
         setSpeechText('Hehe! Delicious bamboo rain!!');
       }, 3100);
     }
-  }, [gagState.kind, schedule]);
+  }, [clearJokeTimers, gagState.kind, schedule]);
 
   const advanceAfterCorrect = useCallback(
     (delayMs: number) => {
@@ -199,6 +261,8 @@ export function useMathGame() {
       if (!currentProblem || answerState === 'correct') return;
 
       if (guess === currentProblem.answer) {
+        clearJokeTimers();
+        setSixSevenJoke(false);
         const stepInSquad = questionIndex % QUESTIONS_PER_SQUAD;
         setAnswerState('correct');
 
@@ -257,6 +321,14 @@ export function useMathGame() {
         return;
       }
 
+      if (isSixSevenEasterEgg(currentProblem, guess)) {
+        triggerSixSevenEasterEgg();
+        return;
+      }
+
+      clearJokeTimers();
+      setSixSevenJoke(false);
+
       // Wrong answer: warm supportive encouragement + voice-guided counting hint
       setAnswerState('wrong');
       setReaction('encourage');
@@ -286,7 +358,7 @@ export function useMathGame() {
 
       schedule(() => {
         setAnswerState('idle');
-        setTypedValue('');
+        updateTypedValue('');
       }, 520);
     },
     [
@@ -295,12 +367,15 @@ export function useMathGame() {
       advanceAfterCorrect,
       answerState,
       attemptsOnCurrent,
+      clearJokeTimers,
       currentProblem,
       gagState.kind,
       hintLevel,
       questionIndex,
       schedule,
+      triggerSixSevenEasterEgg,
       triggerStageGag,
+      updateTypedValue,
     ]
   );
 
@@ -308,38 +383,65 @@ export function useMathGame() {
     (digit: string) => {
       if (answerState === 'correct') return;
       soundEngine.unlock();
+
+      let nextValue: string;
+      if (answerState === 'joke') {
+        clearJokeInputTimer();
+        setAnswerState('idle');
+        nextValue = digit;
+      } else {
+        const current = typedValueRef.current;
+        if (current.length >= 2) return;
+        nextValue = current === '0' ? digit : current + digit;
+      }
+
+      updateTypedValue(nextValue);
+
+      if (isSixSevenEasterEgg(currentProblem, nextValue)) {
+        triggerSixSevenEasterEgg();
+        return;
+      }
+
       soundEngine.playTap();
-      setTypedValue((prev) => {
-        if (prev.length >= 2) return prev;
-        return prev === '0' ? digit : prev + digit;
-      });
     },
-    [answerState]
+    [answerState, clearJokeInputTimer, currentProblem, triggerSixSevenEasterEgg, updateTypedValue]
   );
 
   const handleBackspace = useCallback(() => {
     if (answerState === 'correct') return;
+    if (answerState === 'joke') {
+      clearJokeInputTimer();
+      setAnswerState('idle');
+    }
     soundEngine.playTap();
-    setTypedValue((prev) => prev.slice(0, -1));
-  }, [answerState]);
+    updateTypedValue(typedValueRef.current.slice(0, -1));
+  }, [answerState, clearJokeInputTimer, updateTypedValue]);
 
   const handleCalcSubmit = useCallback(() => {
-    if (typedValue.length === 0) return;
-    submitAnswer(Number(typedValue));
-  }, [submitAnswer, typedValue]);
+    if (answerState === 'joke') return;
+    const current = typedValueRef.current;
+    if (current.length === 0) return;
+    submitAnswer(Number(current));
+  }, [answerState, submitAnswer]);
 
   const handleSelectChoice = useCallback(
     (choice: number) => {
       soundEngine.unlock();
       soundEngine.playTap();
-      setTypedValue(String(choice));
+      updateTypedValue(String(choice));
       submitAnswer(choice);
     },
-    [submitAnswer]
+    [submitAnswer, updateTypedValue]
   );
 
   const handleRequestHint = useCallback(() => {
     if (!currentProblem) return;
+    clearJokeTimers();
+    setSixSevenJoke(false);
+    if (answerState === 'joke') {
+      setAnswerState('idle');
+      updateTypedValue('');
+    }
     soundEngine.unlock();
     soundEngine.playTap();
     const nextHint: 1 | 2 = hintLevel === 0 ? 1 : 2;
@@ -351,10 +453,12 @@ export function useMathGame() {
     } else {
       setWalkthroughTrigger((n) => n + 1);
     }
-  }, [currentProblem, hintLevel]);
+  }, [answerState, clearJokeTimers, currentProblem, hintLevel, updateTypedValue]);
 
   const handleNewProblem = useCallback(() => {
     if (!currentProblem || answerState === 'correct') return;
+    clearJokeTimers();
+    setSixSevenJoke(false);
     soundEngine.unlock();
     soundEngine.stopSpeech();
     soundEngine.playTap();
@@ -368,7 +472,7 @@ export function useMathGame() {
     );
 
     setProblems((prev) => prev.map((p, idx) => (idx === questionIndex ? replacement : p)));
-    setTypedValue('');
+    updateTypedValue('');
     setAnswerState('idle');
     setReaction('idle');
     setHintLevel(0);
@@ -376,7 +480,16 @@ export function useMathGame() {
     setAttemptsOnCurrent(0);
     setSpeechText('Fresh problem! You got this!');
     soundEngine.speak(`Here is a fresh one! ${replacement.hint.equationSpoken}`);
-  }, [answerState, currentProblem, level, opMode, problems, questionIndex]);
+  }, [
+    answerState,
+    clearJokeTimers,
+    currentProblem,
+    level,
+    opMode,
+    problems,
+    questionIndex,
+    updateTypedValue,
+  ]);
 
   const handleReadEquation = useCallback(() => {
     if (!currentProblem) return;
@@ -417,6 +530,7 @@ export function useMathGame() {
 
   const goHome = useCallback(() => {
     clearTimers();
+    setSixSevenJoke(false);
     soundEngine.stopSpeech();
     soundEngine.setPartyBoost(false);
     soundEngine.playTap();
@@ -456,6 +570,7 @@ export function useMathGame() {
     firstTryCount,
     squadToast,
     gagState,
+    sixSevenJoke,
     startNewGame,
     triggerStageGag,
     handleDigit,

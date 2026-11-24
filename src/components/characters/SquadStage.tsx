@@ -11,6 +11,7 @@ interface SquadStageProps {
   reaction: ReactionState;
   speechText: string | null;
   gagState: StageGagState;
+  sixSevenJoke?: boolean;
   onTriggerGag: () => void;
 }
 
@@ -19,6 +20,7 @@ export function SquadStage({
   reaction,
   speechText,
   gagState,
+  sixSevenJoke = false,
   onTriggerGag,
 }: SquadStageProps) {
   const [pokedId, setPokedId] = useState<string | null>(null);
@@ -217,14 +219,23 @@ export function SquadStage({
       {speechText && (
         <div
           className={`speech-bubble ${
-            reaction === 'happy' || reaction === 'celebrate'
-              ? 'happy'
-              : reaction === 'encourage'
-                ? 'encourage'
-                : ''
+            sixSevenJoke
+              ? 'joke'
+              : reaction === 'happy' || reaction === 'celebrate'
+                ? 'happy'
+                : reaction === 'encourage'
+                  ? 'encourage'
+                  : ''
           }`}
         >
           {speechText}
+        </div>
+      )}
+
+      {sixSevenJoke && (
+        <div className="six-seven-meme-layer" aria-hidden="true">
+          <span className="comic-burst six-seven-badge six-badge">6 🤲</span>
+          <span className="comic-burst six-seven-badge seven-badge">🤲 7</span>
         </div>
       )}
 

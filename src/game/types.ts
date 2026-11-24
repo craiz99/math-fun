@@ -8,6 +8,8 @@ export type SquadId = 'pandas' | 'chickens' | 'jjmikey' | 'popstars';
 
 export type ReactionState = 'idle' | 'happy' | 'encourage' | 'celebrate';
 
+export type AnswerState = 'idle' | 'correct' | 'wrong' | 'joke';
+
 export type MathOperator = '+' | '-';
 
 export interface CountingHintData {

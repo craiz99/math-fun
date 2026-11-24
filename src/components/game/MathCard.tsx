@@ -1,11 +1,11 @@
-import type { MathProblem, SquadConfig } from '../../game/types';
+import type { AnswerState, MathProblem, SquadConfig } from '../../game/types';
 import { HintVisual } from './HintVisual';
 
 interface MathCardProps {
   problem: MathProblem;
   squad: SquadConfig;
   typedValue: string;
-  answerState: 'idle' | 'correct' | 'wrong';
+  answerState: AnswerState;
   hintLevel: 0 | 1 | 2;
   walkthroughTrigger: number;
   onRequestHint: () => void;
@@ -37,6 +37,7 @@ export function MathCard({
     typedValue.length > 0 && answerState === 'idle' ? 'filled' : '',
     answerState === 'correct' ? 'correct' : '',
     answerState === 'wrong' ? 'wrong' : '',
+    answerState === 'joke' ? 'joke' : '',
   ]
     .filter(Boolean)
     .join(' ');
